@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "749349757791",
+    "project_id": "norbu-flow",
+    "storage_bucket": "norbu-flow.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:749349757791:android:db8981986c476289354cea",
+        "android_client_info": {
+          "package_name": "com.kharagedition.norbu_flow"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDIYwLKN2J3IUpMunqRUWFDYoUflRlsv1c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
