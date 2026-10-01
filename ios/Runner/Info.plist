@@ -26,6 +26,10 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>NorbuFlow uses the camera to take a member's photo for their ID card.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>NorbuFlow lets you choose a photo for a member's ID card or the temple logo.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
