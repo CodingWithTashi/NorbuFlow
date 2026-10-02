@@ -1,20 +1,28 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/error/app_failure.dart';
 import '../../../../core/error/command.dart';
 import '../../../../core/error/result.dart';
 import '../../data/auth_repositories.dart';
 import '../../domain/auth_repository.dart';
 
+/// The session read from the device before the first frame. `bootstrap`
+/// overrides this with the restored value.
+final initialSessionProvider = Provider<AuthSession>(
+  (ref) => const AuthSession(),
+);
+
 @immutable
 class AuthState {
-  const AuthState({this.user, this.pendingEmail});
+  const AuthState({this.user, this.pendingEmail, this.completing = false});
 
   final AuthUser? user;
 
   /// The address a sign-in link was last sent to, awaiting the tap.
   final String? pendingEmail;
+
+  /// A sign-in link has been opened and is being checked.
+  final bool completing;
 
   bool get isSignedIn => user != null;
 }
@@ -23,7 +31,12 @@ class AuthState {
 /// provider derive from this.
 class AuthViewModel extends Notifier<AuthState> {
   @override
-  AuthState build() => const AuthState();
+  AuthState build() {
+    final links = _repository.signInLinks.listen(completeSignIn);
+    ref.onDispose(links.cancel);
+    final session = ref.watch(initialSessionProvider);
+    return AuthState(user: session.user, pendingEmail: session.pendingEmail);
+  }
 
   AuthRepository get _repository => ref.read(authRepositoryProvider);
 
@@ -33,22 +46,29 @@ class AuthViewModel extends Notifier<AuthState> {
       () => _repository.sendSignInLink(email),
       source: 'auth.sendSignInLink',
     );
-    if (result.isOk) state = AuthState(pendingEmail: email);
+    // Asked for while an earlier link is being checked, that check carries on
+    // and, if it has signed the person in meanwhile, stands.
+    if (result.isOk && !state.isSignedIn) {
+      state = AuthState(pendingEmail: email, completing: state.completing);
+    }
     return result;
   }
 
-  /// Completes sign-in for the pending email. In production this is driven
-  /// by the email link; the demo calls it directly.
-  Future<Result<AuthUser>> completeSignIn() async {
-    final email = state.pendingEmail;
-    if (email == null) return const Err(UnauthenticatedFailure());
+  /// Finishes sign-in with a [link] the person opened. Driven by the links
+  /// arriving from their email; the demo calls it directly.
+  Future<void> completeSignIn(String link) async {
+    // An old link opened while signed in, or one link delivered twice.
+    if (state.isSignedIn || state.completing) return;
+    state = AuthState(pendingEmail: state.pendingEmail, completing: true);
     final result = await runCommand(
       ref,
-      () => _repository.completeSignIn(email),
+      () => _repository.completeSignIn(link),
       source: 'auth.completeSignIn',
     );
-    if (result case Ok(:final value)) state = AuthState(user: value);
-    return result;
+    state = switch (result) {
+      Ok(:final value) => AuthState(user: value),
+      Err() => AuthState(pendingEmail: state.pendingEmail),
+    };
   }
 
   Future<void> signOut() async {

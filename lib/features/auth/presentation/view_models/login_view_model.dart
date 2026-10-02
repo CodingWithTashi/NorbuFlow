@@ -32,7 +32,7 @@ class LoginViewModel extends Notifier<LoginState> {
   LoginState build() {
     // The demo pre-fills the invited address so the flow is one tap.
     final config = ref.watch(appConfigProvider);
-    return LoginState(email: config.demoMode ? config.demoEmail : '');
+    return LoginState(email: config.demoSignIn ? config.demoEmail : '');
   }
 
   void setEmail(String value) {

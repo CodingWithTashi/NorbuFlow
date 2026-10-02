@@ -44,7 +44,11 @@ class AppPage extends StatelessWidget {
         (hasBack
             ? const EdgeInsets.fromLTRB(20, 0, 20, 16)
             : const EdgeInsets.fromLTRB(20, 20, 20, 24));
-    final framed = ContentFrame(maxWidth: maxWidth, child: child);
+    // The keyboard's "next" walks the content before the pinned bar, even
+    // when the next field is scrolled out of sight under it.
+    final framed = FocusTraversalGroup(
+      child: ContentFrame(maxWidth: maxWidth, child: child),
+    );
 
     return ColoredBox(
       color: context.colors.background,

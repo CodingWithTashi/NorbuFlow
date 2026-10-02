@@ -28,6 +28,7 @@ const _locations = [
   AppRoutes.checkIn,
   AppRoutes.members,
   AppRoutes.addMember,
+  AppRoutes.newCard,
   '/members/m1',
   '/members/m4',
   AppRoutes.offerings,

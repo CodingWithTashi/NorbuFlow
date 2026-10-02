@@ -380,6 +380,12 @@ abstract class AppLocalizations {
   /// **'Open the email from NorbuFlow and tap “Sign in”. The link works for 1 hour.'**
   String get checkEmailHelp;
 
+  /// No description provided for @checkEmailSigningIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Signing you in…'**
+  String get checkEmailSigningIn;
+
   /// No description provided for @checkEmailDemo.
   ///
   /// In en, this message translates to:
@@ -1243,6 +1249,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'View ID card'**
   String get addViewCard;
+
+  /// No description provided for @membersNewCard.
+  ///
+  /// In en, this message translates to:
+  /// **'New ID card'**
+  String get membersNewCard;
+
+  /// No description provided for @newCardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New ID card'**
+  String get newCardTitle;
+
+  /// No description provided for @newCardIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a photo and the member\'s details. The membership number and dates are filled in for you.'**
+  String get newCardIntro;
+
+  /// No description provided for @newCardNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Name on the card'**
+  String get newCardNameLabel;
+
+  /// No description provided for @newCardPhotoHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'The photo is printed on the ID card.'**
+  String get newCardPhotoHelp;
+
+  /// No description provided for @newCardCropHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag the photo to move it. Slide to zoom.\nThe frame is exactly what prints on the ID card.'**
+  String get newCardCropHelp;
+
+  /// No description provided for @newCardSubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Create ID card'**
+  String get newCardSubmit;
+
+  /// No description provided for @newCardReadyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'ID card ready'**
+  String get newCardReadyTitle;
+
+  /// No description provided for @newCardReadyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is member number {number}. Valid until {date}.'**
+  String newCardReadyBody(Object name, Object number, Object date);
+
+  /// No description provided for @newCardDocumentName.
+  ///
+  /// In en, this message translates to:
+  /// **'ID card {number}'**
+  String newCardDocumentName(Object number);
+
+  /// No description provided for @newCardFront.
+  ///
+  /// In en, this message translates to:
+  /// **'Front'**
+  String get newCardFront;
+
+  /// No description provided for @newCardBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get newCardBack;
+
+  /// No description provided for @newCardPrint.
+  ///
+  /// In en, this message translates to:
+  /// **'Print the card'**
+  String get newCardPrint;
+
+  /// No description provided for @newCardShare.
+  ///
+  /// In en, this message translates to:
+  /// **'Save or send'**
+  String get newCardShare;
+
+  /// No description provided for @newCardAnother.
+  ///
+  /// In en, this message translates to:
+  /// **'Another card'**
+  String get newCardAnother;
 
   /// No description provided for @cardTitle.
   ///
@@ -3203,6 +3299,36 @@ abstract class AppLocalizations {
   /// **'Please sign in again.'**
   String get failureUnauthenticated;
 
+  /// No description provided for @failureSignInLinkInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'This sign-in link has expired or was already used. Please ask for a new one.'**
+  String get failureSignInLinkInvalid;
+
+  /// No description provided for @failureSignInLinkOtherDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Please ask for the sign-in link on this device, then open it here.'**
+  String get failureSignInLinkOtherDevice;
+
+  /// No description provided for @failureAccountDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'This account has been turned off. Please ask your Temple Admin.'**
+  String get failureAccountDisabled;
+
+  /// No description provided for @failureNotOnTeam.
+  ///
+  /// In en, this message translates to:
+  /// **'Your email is not on a temple team yet. Please ask your Temple Admin.'**
+  String get failureNotOnTeam;
+
+  /// No description provided for @failureTooManyRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many tries. Please wait a few minutes, then try again.'**
+  String get failureTooManyRequests;
+
   /// No description provided for @failurePermission.
   ///
   /// In en, this message translates to:
@@ -3293,6 +3419,30 @@ abstract class AppLocalizations {
   /// **'Please type the member\'s name.'**
   String get validationMemberNameRequired;
 
+  /// No description provided for @validationMemberNameTooLong.
+  ///
+  /// In en, this message translates to:
+  /// **'This name is too long for the ID card. Please shorten it.'**
+  String get validationMemberNameTooLong;
+
+  /// No description provided for @validationMemberNameUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Please type the name in English letters. The ID card cannot print this name.'**
+  String get validationMemberNameUnsupported;
+
+  /// No description provided for @validationPhotoRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please add a photo for the ID card.'**
+  String get validationPhotoRequired;
+
+  /// No description provided for @validationPhotoUnreadable.
+  ///
+  /// In en, this message translates to:
+  /// **'This photo could not be used. Please choose another.'**
+  String get validationPhotoUnreadable;
+
   /// No description provided for @validationPhoneShort.
   ///
   /// In en, this message translates to:
@@ -3328,6 +3478,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Please keep a temple name.'**
   String get validationTempleNameRequired;
+
+  /// No description provided for @validationTempleRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please choose which temple this is for.'**
+  String get validationTempleRequired;
 
   /// No description provided for @validationAddressRequired.
   ///

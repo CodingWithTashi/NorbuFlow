@@ -22,6 +22,7 @@ abstract final class AppRoutes {
 
   static const members = '/members';
   static const addMember = '/members/add';
+  static const newCard = '/members/card';
 
   static const offerings = '/offerings';
   static const puja = '/offerings/puja';

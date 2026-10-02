@@ -4,4 +4,7 @@
          to allow setting breakpoints, to provide hot reload, etc.
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Debug builds may call the functions emulator, which is plain HTTP
+         (FUNCTIONS_EMULATOR_HOST). Release builds stay HTTPS-only. -->
+    <application android:usesCleartextTraffic="true"/>
 </manifest>

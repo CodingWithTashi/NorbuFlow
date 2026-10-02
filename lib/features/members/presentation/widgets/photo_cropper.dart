@@ -6,25 +6,68 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../domain/card.dart';
 
-/// Holds the pan and zoom of a photo being cropped to a circle, and renders
-/// the result. Owned by the screen so its "Use this photo" button can ask
-/// for the cropped image.
+/// The outline a photo is cropped to: what is framed is what ends up on the
+/// ID card.
+@immutable
+class PhotoCropShape {
+  /// The round photo of the in-app membership card.
+  const PhotoCropShape.circle() : aspectRatio = 1, cornerRadius = 0.5;
+
+  /// The photo box of the printed ID card.
+  const PhotoCropShape.idCard()
+    : aspectRatio = CardPhoto.aspectRatio,
+      cornerRadius = CardPhoto.cornerRadius;
+
+  /// Width over height.
+  final double aspectRatio;
+
+  /// As a fraction of the width.
+  final double cornerRadius;
+
+  /// The outline inside [bounds], which must have this shape's proportions.
+  Path outline(Rect bounds) => Path()
+    ..addRRect(
+      RRect.fromRectAndRadius(
+        bounds,
+        Radius.circular(bounds.width * cornerRadius),
+      ),
+    );
+
+  /// The largest size of this shape whose longer side is [longSide].
+  Size sized(double longSide) => aspectRatio >= 1
+      ? Size(longSide, longSide / aspectRatio)
+      : Size(longSide * aspectRatio, longSide);
+}
+
+/// Holds the pan and zoom of a photo being cropped, and renders the result
+/// when the screen's "Use this photo" button asks for it.
 class PhotoCropController extends ChangeNotifier {
-  /// Diameter of the circular crop window, in logical pixels.
+  PhotoCropController({this.shape = const PhotoCropShape.circle()});
+
+  /// Longer side of the crop window, in logical pixels.
   static const viewport = 240.0;
   static const minZoom = 1.0;
   static const maxZoom = 3.0;
 
+  final PhotoCropShape shape;
+
   ui.Image? _image;
+  Future<void> _loading = Future.value();
   double _zoom = minZoom;
   Offset _offset = Offset.zero;
 
   ui.Image? get image => _image;
   double get zoom => _zoom;
 
+  /// The crop window, in logical pixels.
+  Size get window => shape.sized(viewport);
+
   /// Decodes [bytes] and resets the crop to the centre of the photo.
-  Future<void> load(Uint8List bytes) async {
+  Future<void> load(Uint8List bytes) => _loading = _decode(bytes);
+
+  Future<void> _decode(Uint8List bytes) async {
     final codec = await ui.instantiateImageCodec(bytes);
     final frame = await codec.getNextFrame();
     _image?.dispose();
@@ -34,10 +77,14 @@ class PhotoCropController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Scale that makes the photo's shorter side fill the crop window.
+  /// Scale at which the photo just covers the crop window, times the zoom.
   double get _scale {
     final image = _image!;
-    return viewport / math.min(image.width, image.height) * _zoom;
+    final cover = math.max(
+      window.width / image.width,
+      window.height / image.height,
+    );
+    return cover * _zoom;
   }
 
   /// Size of the photo as drawn.
@@ -52,8 +99,8 @@ class PhotoCropController extends ChangeNotifier {
 
   Offset _clamp(Offset value) {
     final size = drawnSize;
-    final maxX = (size.width - viewport) / 2;
-    final maxY = (size.height - viewport) / 2;
+    final maxX = (size.width - window.width) / 2;
+    final maxY = (size.height - window.height) / 2;
     return Offset(
       value.dx.clamp(-maxX, maxX).toDouble(),
       value.dy.clamp(-maxY, maxY).toDouble(),
@@ -73,28 +120,33 @@ class PhotoCropController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Renders the part of the photo inside the crop window as a square PNG,
-  /// [size] pixels on a side.
+  /// Renders the part of the photo inside the crop window as a PNG whose
+  /// longer side is [size] pixels.
   Future<Uint8List> export({int size = 480}) async {
+    // The button can be tapped while a large photo is still being decoded.
+    await _loading;
     final image = _image!;
     final scale = _scale;
     final drawn = drawnSize;
     final pan = offset;
     final source = Rect.fromLTWH(
-      ((drawn.width - viewport) / 2 - pan.dx) / scale,
-      ((drawn.height - viewport) / 2 - pan.dy) / scale,
-      viewport / scale,
-      viewport / scale,
+      ((drawn.width - window.width) / 2 - pan.dx) / scale,
+      ((drawn.height - window.height) / 2 - pan.dy) / scale,
+      window.width / scale,
+      window.height / scale,
     );
+    final output = shape.sized(size.toDouble());
+    final width = output.width.round();
+    final height = output.height.round();
     final recorder = ui.PictureRecorder();
     Canvas(recorder).drawImageRect(
       image,
       source,
-      Rect.fromLTWH(0, 0, size.toDouble(), size.toDouble()),
+      Rect.fromLTWH(0, 0, width.toDouble(), height.toDouble()),
       Paint()..filterQuality = FilterQuality.high,
     );
     final picture = recorder.endRecording();
-    final rendered = await picture.toImage(size, size);
+    final rendered = await picture.toImage(width, height);
     final data = await rendered.toByteData(format: ui.ImageByteFormat.png);
     picture.dispose();
     rendered.dispose();
@@ -108,14 +160,14 @@ class PhotoCropController extends ChangeNotifier {
   }
 }
 
-/// Drag to move, slide to zoom. The circle shows exactly what will appear on
-/// the ID card.
+/// Drag to move, slide to zoom. The outline shows exactly what will appear
+/// on the ID card.
 class PhotoCropper extends StatelessWidget {
   const PhotoCropper({super.key, required this.controller});
 
   final PhotoCropController controller;
 
-  /// The square the photo is shown in; the crop circle is inset within it.
+  /// The square the photo is shown in; the crop window is inset within it.
   static const boxSize = 280.0;
 
   @override
@@ -191,20 +243,19 @@ class _CropPainter extends CustomPainter {
       Paint()..filterQuality = FilterQuality.medium,
     );
 
-    // Dim everything outside the crop circle, then outline it.
-    final window = Rect.fromCircle(
-      center: box.center,
-      radius: PhotoCropController.viewport / 2,
+    // Dim everything outside the crop window, then outline it.
+    final window = controller.shape.outline(
+      Rect.fromCenter(
+        center: box.center,
+        width: controller.window.width,
+        height: controller.window.height,
+      ),
     );
     canvas.drawPath(
-      Path.combine(
-        PathOperation.difference,
-        Path()..addRect(box),
-        Path()..addOval(window),
-      ),
+      Path.combine(PathOperation.difference, Path()..addRect(box), window),
       Paint()..color = AppPalette.cropScrim,
     );
-    canvas.drawOval(
+    canvas.drawPath(
       window,
       Paint()
         ..color = AppPalette.gold

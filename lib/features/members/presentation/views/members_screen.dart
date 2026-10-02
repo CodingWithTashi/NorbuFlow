@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/router/app_routes.dart';
+import '../../../../core/config/app_config.dart';
 import '../../../../core/layout/breakpoints.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/clock.dart';
@@ -176,9 +177,22 @@ class _MemberList extends ConsumerWidget {
             ),
           ),
           BottomActionBar(
-            child: PrimaryButton(
-              label: l10n.membersAddCta,
-              onPressed: () => context.go(AppRoutes.addMember),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                PrimaryButton(
+                  label: l10n.membersAddCta,
+                  onPressed: () => context.go(AppRoutes.addMember),
+                ),
+                // With the backend on, Add a Member already opens New ID card.
+                if (ref.watch(appConfigProvider).addMemberWizard)
+                  LinkButton(
+                    label: l10n.membersNewCard,
+                    onPressed: () => context.go(AppRoutes.newCard),
+                    expand: true,
+                  ),
+              ],
             ),
           ),
         ],

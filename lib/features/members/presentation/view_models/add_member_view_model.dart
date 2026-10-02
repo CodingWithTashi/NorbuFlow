@@ -1,14 +1,12 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/error/command.dart';
 import '../../../../core/error/validation_issue.dart';
-import '../../../../core/models/photo_source.dart';
-import '../../../../core/services/photo_picker.dart';
 import '../../../../core/utils/clock.dart';
 import '../../../../core/utils/validators.dart';
 import '../../domain/member.dart';
 import 'members_view_model.dart';
+import 'photo_draft.dart';
 
 enum AddMemberStep { photo, details, type, payment }
 
@@ -24,9 +22,7 @@ class AddMemberState {
     this.email = '',
     this.type = MembershipType.family,
     this.payment = PaymentMethod.card,
-    this.photo,
-    this.photoOriginal,
-    this.cropping = false,
+    this.photo = const PhotoDraft(),
     this.issues = const {},
     this.submitting = false,
     this.created,
@@ -39,15 +35,7 @@ class AddMemberState {
   final String email;
   final MembershipType type;
   final PaymentMethod payment;
-
-  /// The cropped photo that will go on the ID card.
-  final MemoryPhoto? photo;
-
-  /// The image as picked, kept so the crop can be adjusted.
-  final Uint8List? photoOriginal;
-
-  /// Whether the crop editor is open.
-  final bool cropping;
+  final PhotoDraft photo;
   final Map<AddMemberField, ValidationIssue> issues;
   final bool submitting;
 
@@ -63,9 +51,7 @@ class AddMemberState {
     String? email,
     MembershipType? type,
     PaymentMethod? payment,
-    MemoryPhoto? photo,
-    Uint8List? photoOriginal,
-    bool? cropping,
+    PhotoDraft? photo,
     Map<AddMemberField, ValidationIssue>? issues,
     bool? submitting,
     Member? created,
@@ -79,8 +65,6 @@ class AddMemberState {
       type: type ?? this.type,
       payment: payment ?? this.payment,
       photo: photo ?? this.photo,
-      photoOriginal: photoOriginal ?? this.photoOriginal,
-      cropping: cropping ?? this.cropping,
       issues: issues ?? this.issues,
       submitting: submitting ?? this.submitting,
       created: created ?? this.created,
@@ -88,9 +72,16 @@ class AddMemberState {
   }
 }
 
-class AddMemberViewModel extends Notifier<AddMemberState> {
+class AddMemberViewModel extends Notifier<AddMemberState>
+    with PhotoDraftCommands<AddMemberState> {
   @override
   AddMemberState build() => const AddMemberState();
+
+  @override
+  PhotoDraft get photo => state.photo;
+
+  @override
+  set photo(PhotoDraft value) => state = state.copyWith(photo: value);
 
   void setNameEn(String value) =>
       state = _clearing(AddMemberField.nameEn).copyWith(nameEn: value);
@@ -110,27 +101,6 @@ class AddMemberViewModel extends Notifier<AddMemberState> {
 
   AddMemberState _clearing(AddMemberField field) =>
       state.copyWith(issues: {...state.issues}..remove(field));
-
-  /// Opens the camera or gallery; on success the crop editor opens.
-  Future<void> pickPhoto(PhotoOrigin origin) async {
-    final result = await runCommand(
-      ref,
-      () => ref.read(photoPickerProvider).pick(origin),
-      source: 'members.pickPhoto',
-    );
-    final bytes = result.valueOrNull;
-    if (bytes == null || !ref.mounted) return;
-    state = state.copyWith(photoOriginal: bytes, cropping: true);
-  }
-
-  void reopenCrop() {
-    if (state.photoOriginal != null) state = state.copyWith(cropping: true);
-  }
-
-  void cancelCrop() => state = state.copyWith(cropping: false);
-
-  void useCroppedPhoto(Uint8List bytes) =>
-      state = state.copyWith(photo: MemoryPhoto(bytes), cropping: false);
 
   /// Returns false when already on the first step, so the screen can leave.
   bool back() {
@@ -182,7 +152,7 @@ class AddMemberViewModel extends Notifier<AddMemberState> {
             email: state.email,
             type: state.type,
             payment: state.payment,
-            photo: state.photo,
+            photo: state.photo.cropped,
           ),
         );
     if (!ref.mounted) return;

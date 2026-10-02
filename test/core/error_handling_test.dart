@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:cloud_functions/cloud_functions.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -46,6 +48,98 @@ void main() {
       final failure = FailureMapper.map(cause);
       expect(failure, isA<UnknownFailure>());
       expect(failure.cause, same(cause));
+    });
+
+    group('backend errors', () {
+      AppFailure mapped(String code, [Object? details]) => FailureMapper.map(
+        FirebaseFunctionsException(code: code, message: code, details: details),
+      );
+
+      test('become the matching failure, keeping the reason', () {
+        expect(mapped('unauthenticated'), isA<UnauthenticatedFailure>());
+        expect(mapped('not-found'), isA<NotFoundFailure>());
+        expect(mapped('internal'), isA<UnknownFailure>());
+        expect(
+          mapped('permission-denied', {'reason': 'adminOnlyRoles'}),
+          isA<PermissionFailure>().having(
+            (failure) => failure.reason,
+            'reason',
+            PermissionReason.adminOnlyRoles,
+          ),
+        );
+        expect(
+          mapped('already-exists', {'reason': 'alreadyOnTeam'}),
+          isA<ConflictFailure>().having(
+            (failure) => failure.reason,
+            'reason',
+            ConflictReason.alreadyOnTeam,
+          ),
+        );
+      });
+
+      test('a reason the app does not know falls back to the general one', () {
+        expect(
+          mapped('permission-denied', {'reason': 'addedNextYear'}),
+          isA<PermissionFailure>().having(
+            (failure) => failure.reason,
+            'reason',
+            PermissionReason.general,
+          ),
+        );
+        expect(mapped('permission-denied'), isA<PermissionFailure>());
+      });
+
+      test('rejected input names each field and its issue', () {
+        final failure = mapped('invalid-argument', {
+          'fields': {'email': 'emailIncomplete', 'role': 'addedNextYear'},
+        });
+        expect(
+          failure,
+          isA<ValidationFailure>().having(
+            (failure) => failure.issues,
+            'issues',
+            {'email': ValidationIssue.emailIncomplete},
+          ),
+        );
+      });
+
+      test('an unreachable or slow backend is worth retrying', () {
+        expect(mapped('unavailable'), isA<NetworkFailure>());
+        expect(mapped('deadline-exceeded'), isA<TimeoutFailure>());
+        expect(mapped('unavailable').isTransient, isTrue);
+      });
+
+      test('a backend that is asked too often says so', () {
+        expect(mapped('resource-exhausted'), isA<TooManyRequestsFailure>());
+      });
+    });
+
+    test('sign-in errors become failures the app has words for', () {
+      AppFailure mapped(String code) =>
+          FailureMapper.map(FirebaseAuthException(code: code));
+
+      expect(mapped('network-request-failed'), isA<NetworkFailure>());
+      expect(mapped('too-many-requests'), isA<TooManyRequestsFailure>());
+      expect(mapped('quota-exceeded'), isA<TooManyRequestsFailure>());
+      expect(mapped('operation-not-allowed'), isA<UnavailableFailure>());
+      expect(
+        mapped('invalid-email'),
+        isA<ValidationFailure>().having((failure) => failure.issues, 'issues', {
+          'email': ValidationIssue.emailIncomplete,
+        }),
+      );
+      expect(mapped('expired-action-code'), isA<SignInLinkFailure>());
+      expect(mapped('invalid-action-code'), isA<SignInLinkFailure>());
+      expect(mapped('user-token-expired'), isA<UnauthenticatedFailure>());
+      expect(
+        mapped('user-disabled'),
+        isA<PermissionFailure>().having(
+          (failure) => failure.reason,
+          'reason',
+          PermissionReason.accountDisabled,
+        ),
+      );
+      expect(mapped('something-new'), isA<UnknownFailure>());
     });
 
     test('guardFailures only ever throws AppFailure', () async {
@@ -136,6 +230,24 @@ void main() {
       );
     });
 
+    test('tells the person what to do about a sign-in link', () {
+      expect(
+        failureText(
+          l10n,
+          const SignInLinkFailure(reason: SignInLinkReason.invalid),
+        ),
+        'This sign-in link has expired or was already used. '
+        'Please ask for a new one.',
+      );
+      expect(
+        failureText(
+          l10n,
+          const SignInLinkFailure(reason: SignInLinkReason.differentDevice),
+        ),
+        'Please ask for the sign-in link on this device, then open it here.',
+      );
+    });
+
     test('never leaks the underlying error to the user', () {
       final text = failureText(
         l10n,
@@ -146,9 +258,8 @@ void main() {
   });
 
   group('localised messages', () {
-    // gen-l10n orders *inferred* placeholders alphabetically, which silently
-    // swaps arguments. Multi-placeholder messages therefore declare their
-    // order in the ARB; this guards that they keep doing so.
+    // gen-l10n sorts inferred placeholders alphabetically, swapping arguments
+    // silently, so these messages declare their order in the ARB.
     test('take their arguments in reading order', () async {
       final l10n = await AppLocalizations.delegate.load(const Locale('en'));
       expect(l10n.tibetanDate(8, 19), 'Tibetan month 8, day 19');

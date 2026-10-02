@@ -1,12 +1,7 @@
 import 'validation_issue.dart';
 
-/// Every error the app can surface, as one closed hierarchy.
-///
-/// Repositories only ever throw [AppFailure] (see `guardFailures`), view
-/// models only ever expose [AppFailure], and the UI turns one into words in
-/// exactly one place (`failureText`). Adding a new kind of failure therefore
-/// means adding a subclass here and a line there — the compiler flags the
-/// rest.
+/// Every error the app can surface, as one closed hierarchy: what
+/// repositories throw, view models expose and `failureText` puts into words.
 sealed class AppFailure implements Exception {
   const AppFailure({this.cause});
 
@@ -39,7 +34,31 @@ final class UnauthenticatedFailure extends AppFailure {
   const UnauthenticatedFailure({super.cause});
 }
 
-enum PermissionReason { general, adminOnlyRoles, adminOnlySettings, ownRole }
+enum SignInLinkReason {
+  /// Expired, already used, or sent to a different address.
+  invalid,
+
+  /// Opened on a device that did not ask for it.
+  differentDevice,
+}
+
+/// An emailed sign-in link that cannot be used. A new one is the only fix.
+final class SignInLinkFailure extends AppFailure {
+  const SignInLinkFailure({required this.reason, super.cause});
+
+  final SignInLinkReason reason;
+}
+
+enum PermissionReason {
+  general,
+  adminOnlyRoles,
+  adminOnlySettings,
+  ownRole,
+  accountDisabled,
+
+  /// Signed in, but no temple has added this email to its team.
+  notOnTeam,
+}
 
 final class PermissionFailure extends AppFailure {
   const PermissionFailure({
@@ -72,6 +91,11 @@ final class ValidationFailure extends AppFailure {
 /// A dependency (AI help, printing, …) that is not reachable right now.
 final class UnavailableFailure extends AppFailure {
   const UnavailableFailure({super.cause});
+}
+
+/// Too many attempts in a short time. Waiting is the only fix.
+final class TooManyRequestsFailure extends AppFailure {
+  const TooManyRequestsFailure({super.cause});
 }
 
 /// A temple-scoped call was made before a temple was chosen.

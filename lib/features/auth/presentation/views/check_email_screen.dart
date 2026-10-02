@@ -23,11 +23,13 @@ class CheckEmailScreen extends ConsumerWidget {
     final colors = context.colors;
     final type = context.type;
     final l10n = context.l10n;
-    final email = ref.watch(
-      authViewModelProvider.select((auth) => auth.pendingEmail),
+    final (email, completing) = ref.watch(
+      authViewModelProvider.select(
+        (auth) => (auth.pendingEmail, auth.completing),
+      ),
     );
     final auth = ref.read(authViewModelProvider.notifier);
-    final demoMode = ref.watch(appConfigProvider).demoMode;
+    final config = ref.watch(appConfigProvider);
 
     void toLogin() => context.go(AppRoutes.login);
 
@@ -98,15 +100,18 @@ class CheckEmailScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 18),
                       Text(
-                        l10n.checkEmailHelp,
+                        completing
+                            ? l10n.checkEmailSigningIn
+                            : l10n.checkEmailHelp,
                         textAlign: TextAlign.center,
                         style: type.sans(16, color: colors.inkMuted),
                       ),
-                      if (demoMode) ...[
+                      if (config.demoSignIn) ...[
                         const SizedBox(height: 18),
                         DemoButton(
                           label: l10n.checkEmailDemo,
-                          onPressed: auth.completeSignIn,
+                          onPressed: () =>
+                              auth.completeSignIn(config.demoSignInLink),
                         ),
                       ],
                     ],

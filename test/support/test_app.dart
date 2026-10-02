@@ -33,18 +33,25 @@ Future<void> loadAppFonts() async {
 /// The moment every test runs at: Wednesday 30 September 2026, 10:42.
 final testNow = DateTime(2026, 9, 30, 10, 42);
 
+/// Firebase off, so every repository is its in-memory fake, and no latency.
+const testConfig = AppConfig(fakeLatency: Duration.zero);
+
 /// Overrides that make the fakes instant and time fixed.
-List<Override> testOverrides() => [
-  appConfigProvider.overrideWithValue(
-    const AppConfig(fakeLatency: Duration.zero),
-  ),
+List<Override> testOverrides({AppConfig config = testConfig}) => [
+  appConfigProvider.overrideWithValue(config),
   clockProvider.overrideWithValue(() => testNow),
 ];
 
 /// A container for view-model tests, disposed with the test.
-ProviderContainer createContainer({List<Override> overrides = const []}) {
+ProviderContainer createContainer({
+  List<Override> overrides = const [],
+  AppConfig config = testConfig,
+}) {
   final container = ProviderContainer(
-    overrides: [...testOverrides(), ...overrides],
+    overrides: [
+      ...testOverrides(config: config),
+      ...overrides,
+    ],
     retry: appRetryPolicy,
   );
   addTearDown(container.dispose);
@@ -67,7 +74,7 @@ Future<void> signIn(
 }) async {
   final auth = container.read(authViewModelProvider.notifier);
   await auth.sendSignInLink('dolma@jangchub.org');
-  await auth.completeSignIn();
+  await auth.completeSignIn(container.read(appConfigProvider).demoSignInLink);
   await container.read(templesProvider.future);
   container.read(currentTempleIdProvider.notifier).select(templeId);
 }
@@ -90,5 +97,21 @@ extension AppTester on WidgetTester {
       ),
     );
     await pump();
+  }
+
+  /// Taps [label] and waits for [shown] when what comes between is real work
+  /// (decoding an image, drawing a PDF) that the test's fake clock cannot run.
+  Future<void> tapAndWaitFor(String label, Finder shown) async {
+    await runAsync(() async {
+      await tap(find.text(label));
+      final patience = Stopwatch()..start();
+      while (shown.evaluate().isEmpty &&
+          patience.elapsed < const Duration(seconds: 10)) {
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+        await pump();
+      }
+    });
+    await pumpAndSettle();
+    expect(shown, findsWidgets, reason: 'after tapping "$label"');
   }
 }

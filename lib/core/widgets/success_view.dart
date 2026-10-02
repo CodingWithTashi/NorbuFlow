@@ -95,6 +95,7 @@ class SuccessView extends StatelessWidget {
     required this.primaryLabel,
     required this.onPrimary,
     required this.onDone,
+    this.preview,
     this.shareActions = const [],
   });
 
@@ -103,6 +104,9 @@ class SuccessView extends StatelessWidget {
   final String primaryLabel;
   final VoidCallback onPrimary;
   final VoidCallback onDone;
+
+  /// What the flow made, shown under the message: the document itself.
+  final Widget? preview;
   final List<ShareAction> shareActions;
 
   @override
@@ -162,6 +166,10 @@ class SuccessView extends StatelessWidget {
             textAlign: TextAlign.center,
             style: type.sans(17, color: colors.inkMuted, height: 1.55),
           ),
+          if (preview case final preview?) ...[
+            const SizedBox(height: 24),
+            preview,
+          ],
           if (shareActions.isNotEmpty) ...[
             const SizedBox(height: 24),
             ShareActionRow(actions: shareActions),

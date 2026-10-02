@@ -7,15 +7,12 @@ import '../../../../core/error/failure_text.dart';
 import '../../../../core/error/validation_issue.dart';
 import '../../../../core/feedback/app_messenger.dart';
 import '../../../../core/layout/responsive.dart';
-import '../../../../core/services/photo_picker.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/widgets/app_icon.dart';
 import '../../../../core/widgets/app_page.dart';
 import '../../../../core/widgets/app_text_field.dart';
-import '../../../../core/widgets/avatars.dart';
-import '../../../../core/widgets/buttons.dart';
 import '../../../../core/widgets/decor.dart';
 import '../../../../core/widgets/selection.dart';
 import '../../../../core/widgets/success_view.dart';
@@ -28,6 +25,7 @@ import '../../domain/member.dart';
 import '../member_labels.dart';
 import '../view_models/add_member_view_model.dart';
 import '../widgets/photo_cropper.dart';
+import '../widgets/photo_field.dart';
 
 /// Add a Member: photo → details → membership type → payment, ending on a
 /// confirmation with the new ID card one tap away.
@@ -51,7 +49,7 @@ class _AddMemberScreenState extends ConsumerState<AddMemberScreen> {
       ref.read(addMemberViewModelProvider.notifier);
 
   Future<void> _next(AddMemberState state) async {
-    if (!state.cropping) return _viewModel.next();
+    if (!state.photo.cropping) return _viewModel.next();
     _viewModel.useCroppedPhoto(await _crop.export());
     if (mounted) ref.toast(context.l10n.toastPhotoCropped);
   }
@@ -66,20 +64,13 @@ class _AddMemberScreenState extends ConsumerState<AddMemberScreen> {
     final state = ref.watch(addMemberViewModelProvider);
     final temple = ref.watch(currentTempleProvider);
 
-    // Opening the crop editor (first pick or "Adjust the crop") loads the
-    // original image into the controller.
-    ref.listen(addMemberViewModelProvider.select((s) => s.cropping), (_, now) {
-      final original = ref.read(addMemberViewModelProvider).photoOriginal;
-      if (now && original != null) _crop.load(original);
-    });
-
     final created = state.created;
     if (created != null && temple != null) {
       return _AddedView(member: created, temple: temple);
     }
 
     final String nextLabel;
-    if (state.cropping) {
+    if (state.photo.cropping) {
       nextLabel = l10n.addUseThisPhoto;
     } else if (state.step == AddMemberStep.payment) {
       nextLabel = l10n.addSubmit(Formats.money(state.type.fee));
@@ -102,150 +93,19 @@ class _AddMemberScreenState extends ConsumerState<AddMemberScreen> {
       onNext: () => _next(state),
       busy: state.submitting,
       child: switch (state.step) {
-        AddMemberStep.photo => _PhotoStep(state: state, crop: _crop),
+        AddMemberStep.photo => PhotoField(
+          photo: state.photo,
+          crop: _crop,
+          onPick: _viewModel.pickPhoto,
+          onAdjustCrop: _viewModel.reopenCrop,
+          onCancelCrop: _viewModel.cancelCrop,
+          help: l10n.addPhotoHelp,
+          cropHelp: l10n.addCropHelp,
+        ),
         AddMemberStep.details => _DetailsStep(state: state),
         AddMemberStep.type => _TypeStep(state: state, temple: temple),
         AddMemberStep.payment => _PaymentStep(state: state, temple: temple),
       },
-    );
-  }
-}
-
-class _PhotoStep extends ConsumerWidget {
-  const _PhotoStep({required this.state, required this.crop});
-
-  final AddMemberState state;
-  final PhotoCropController crop;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final colors = context.colors;
-    final type = context.type;
-    final l10n = context.l10n;
-    final viewModel = ref.read(addMemberViewModelProvider.notifier);
-
-    if (state.cropping) {
-      return Column(
-        children: [
-          PhotoCropper(controller: crop),
-          const SizedBox(height: 8),
-          Text(
-            l10n.addCropHelp,
-            textAlign: TextAlign.center,
-            style: type.sans(16, color: colors.inkMuted, height: 1.5),
-          ),
-          LinkButton(
-            label: l10n.addChooseDifferentPhoto,
-            onPressed: viewModel.cancelCrop,
-          ),
-        ],
-      );
-    }
-
-    Widget pickButton(AppIconData icon, String label, PhotoOrigin origin) {
-      return Material(
-        color: colors.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: AppPalette.amber, width: 2),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: () => viewModel.pickPhoto(origin),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 104),
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  AppIcon(icon, size: 28, color: colors.accentText),
-                  const SizedBox(height: 8),
-                  Text(
-                    label,
-                    textAlign: TextAlign.center,
-                    style: type.sans(17, weight: FontWeight.w700, height: 1.3),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      );
-    }
-
-    final photo = state.photo;
-    return Column(
-      children: [
-        if (photo != null) ...[
-          Container(
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: AppPalette.gold,
-                width: 2,
-                strokeAlign: BorderSide.strokeAlignOutside,
-              ),
-            ),
-            child: ClipOval(
-              child: SizedBox.square(dimension: 200, child: PhotoImage(photo)),
-            ),
-          ),
-          const SizedBox(height: 16),
-          IconLabel(
-            icon: AppIcons.check,
-            label: l10n.addPhotoReady,
-            style: type.sans(
-              17,
-              weight: FontWeight.w600,
-              color: colors.success,
-            ),
-          ),
-          LinkButton(
-            label: l10n.addAdjustCrop,
-            underline: true,
-            onPressed: viewModel.reopenCrop,
-          ),
-        ] else ...[
-          CustomPaint(
-            foregroundPainter: _DashedCirclePainter(AppPalette.gold),
-            child: Container(
-              width: 200,
-              height: 200,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: colors.card,
-              ),
-              child: AppIcon(
-                AppIcons.person,
-                size: 72,
-                color: colors.inkMuted,
-                strokeWidth: 1.3,
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-        ],
-        EqualRow(
-          gap: 12,
-          children: [
-            pickButton(AppIcons.camera, l10n.addTakePhoto, PhotoOrigin.camera),
-            pickButton(
-              AppIcons.image,
-              l10n.addUploadPhoto,
-              PhotoOrigin.gallery,
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        Text(
-          l10n.addPhotoHelp,
-          textAlign: TextAlign.center,
-          style: type.sans(15, color: colors.inkMuted, height: 1.5),
-        ),
-      ],
     );
   }
 }
@@ -538,28 +398,4 @@ class _AddedView extends ConsumerWidget {
       ],
     );
   }
-}
-
-class _DashedCirclePainter extends CustomPainter {
-  _DashedCirclePainter(this.color);
-
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
-    final outline = Path()..addOval((Offset.zero & size).deflate(1));
-    for (final metric in outline.computeMetrics()) {
-      for (var at = 0.0; at < metric.length; at += 14) {
-        canvas.drawPath(metric.extractPath(at, at + 8), paint);
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(_DashedCirclePainter oldDelegate) =>
-      oldDelegate.color != color;
 }

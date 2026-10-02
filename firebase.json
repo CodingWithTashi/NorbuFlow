@@ -1,1 +1,44 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"norbu-flow","appId":"1:749349757791:android:db8981986c476289354cea","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"norbu-flow","configurations":{"android":"1:749349757791:android:db8981986c476289354cea","ios":"1:749349757791:ios:27d42618cd14feda354cea"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "norbu-flow",
+          "appId": "1:749349757791:android:db8981986c476289354cea",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "norbu-flow",
+          "configurations": {
+            "android": "1:749349757791:android:db8981986c476289354cea",
+            "ios": "1:749349757791:ios:27d42618cd14feda354cea"
+          }
+        }
+      }
+    }
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "runtime": "nodejs24",
+      "ignore": ["node_modules", "test", "*.log", "*.local"],
+      "predeploy": [
+        "npm --prefix \"$RESOURCE_DIR\" run lint",
+        "npm --prefix \"$RESOURCE_DIR\" run build"
+      ]
+    }
+  ],
+  "hosting": {
+    "public": "hosting",
+    "ignore": ["firebase.json", "**/.*"]
+  },
+  "emulators": {
+    "auth": { "port": 9099 },
+    "functions": { "port": 5001 },
+    "ui": { "enabled": true },
+    "singleProjectMode": true
+  }
+}

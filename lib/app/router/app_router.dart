@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/config/app_config.dart';
 import '../../core/utils/clock.dart';
 import '../../features/announcements/presentation/views/announcement_screen.dart';
 import '../../features/announcements/presentation/views/approve_screen.dart';
@@ -13,6 +14,7 @@ import '../../features/members/presentation/views/add_member_screen.dart';
 import '../../features/members/presentation/views/check_in_screen.dart';
 import '../../features/members/presentation/views/member_card_view.dart';
 import '../../features/members/presentation/views/members_screen.dart';
+import '../../features/members/presentation/views/new_card_screen.dart';
 import '../../features/offerings/domain/offering.dart';
 import '../../features/offerings/presentation/views/donation_screen.dart';
 import '../../features/offerings/presentation/views/offerings_screen.dart';
@@ -36,9 +38,8 @@ import '../../features/volunteers/presentation/views/plan_screen.dart';
 import '../shell/app_shell.dart';
 import 'app_routes.dart';
 
-/// The app's routes, and the one rule for who may be where:
-/// signed out → sign-in screens; signed in without a temple → temple picker;
-/// otherwise → the app. Screens never check this themselves.
+/// The app's routes, and the one rule for who may be where: signed out →
+/// sign-in; no temple chosen → temple picker; otherwise → the app.
 final routerProvider = Provider<GoRouter>((ref) {
   // Re-run the redirect whenever the session or the chosen temple changes.
   final sessionChanged = ValueNotifier(0);
@@ -135,10 +136,20 @@ final routerProvider = Provider<GoRouter>((ref) {
                 path: AppRoutes.members,
                 builder: (_, _) => const MembersScreen(),
                 routes: [
-                  // Before ':memberId' so "add" is not read as an id.
+                  // Before ':memberId' so "add" and "card" are not read as ids.
                   GoRoute(
                     path: 'add',
+                    // With the backend on, a member is added by the flow that
+                    // issues their real number and card.
+                    redirect: (_, _) =>
+                        ref.read(appConfigProvider).addMemberWizard
+                        ? null
+                        : AppRoutes.newCard,
                     builder: (_, _) => const AddMemberScreen(),
+                  ),
+                  GoRoute(
+                    path: 'card',
+                    builder: (_, _) => const NewCardScreen(),
                   ),
                   GoRoute(
                     path: ':memberId',

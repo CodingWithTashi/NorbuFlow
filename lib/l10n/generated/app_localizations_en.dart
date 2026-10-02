@@ -159,6 +159,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Open the email from NorbuFlow and tap “Sign in”. The link works for 1 hour.';
 
   @override
+  String get checkEmailSigningIn => 'Signing you in…';
+
+  @override
   String get checkEmailDemo => 'Demo only — pretend I tapped the link';
 
   @override
@@ -650,6 +653,57 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get addViewCard => 'View ID card';
+
+  @override
+  String get membersNewCard => 'New ID card';
+
+  @override
+  String get newCardTitle => 'New ID card';
+
+  @override
+  String get newCardIntro =>
+      'Add a photo and the member\'s details. The membership number and dates are filled in for you.';
+
+  @override
+  String get newCardNameLabel => 'Name on the card';
+
+  @override
+  String get newCardPhotoHelp => 'The photo is printed on the ID card.';
+
+  @override
+  String get newCardCropHelp =>
+      'Drag the photo to move it. Slide to zoom.\nThe frame is exactly what prints on the ID card.';
+
+  @override
+  String get newCardSubmit => 'Create ID card';
+
+  @override
+  String get newCardReadyTitle => 'ID card ready';
+
+  @override
+  String newCardReadyBody(Object name, Object number, Object date) {
+    return '$name is member number $number. Valid until $date.';
+  }
+
+  @override
+  String newCardDocumentName(Object number) {
+    return 'ID card $number';
+  }
+
+  @override
+  String get newCardFront => 'Front';
+
+  @override
+  String get newCardBack => 'Back';
+
+  @override
+  String get newCardPrint => 'Print the card';
+
+  @override
+  String get newCardShare => 'Save or send';
+
+  @override
+  String get newCardAnother => 'Another card';
 
   @override
   String get cardTitle => 'Membership Card';
@@ -1810,6 +1864,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get failureUnauthenticated => 'Please sign in again.';
 
   @override
+  String get failureSignInLinkInvalid =>
+      'This sign-in link has expired or was already used. Please ask for a new one.';
+
+  @override
+  String get failureSignInLinkOtherDevice =>
+      'Please ask for the sign-in link on this device, then open it here.';
+
+  @override
+  String get failureAccountDisabled =>
+      'This account has been turned off. Please ask your Temple Admin.';
+
+  @override
+  String get failureNotOnTeam =>
+      'Your email is not on a temple team yet. Please ask your Temple Admin.';
+
+  @override
+  String get failureTooManyRequests =>
+      'Too many tries. Please wait a few minutes, then try again.';
+
+  @override
   String get failurePermission => 'You do not have permission to do that.';
 
   @override
@@ -1861,6 +1935,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get validationMemberNameRequired => 'Please type the member\'s name.';
 
   @override
+  String get validationMemberNameTooLong =>
+      'This name is too long for the ID card. Please shorten it.';
+
+  @override
+  String get validationMemberNameUnsupported =>
+      'Please type the name in English letters. The ID card cannot print this name.';
+
+  @override
+  String get validationPhotoRequired => 'Please add a photo for the ID card.';
+
+  @override
+  String get validationPhotoUnreadable =>
+      'This photo could not be used. Please choose another.';
+
+  @override
   String get validationPhoneShort =>
       'Phone number seems short. Please check it.';
 
@@ -1880,6 +1969,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get validationTempleNameRequired => 'Please keep a temple name.';
+
+  @override
+  String get validationTempleRequired =>
+      'Please choose which temple this is for.';
 
   @override
   String get validationAddressRequired => 'Please type the mailing address.';
