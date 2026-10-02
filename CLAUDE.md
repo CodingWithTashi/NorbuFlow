@@ -272,7 +272,7 @@ functions/src/
     <entity>.ts             # entity + repository interface
     <store>-<entity>.repository.ts
 functions/migrations/       # numbered SQL, applied in name order
-functions/assets/           # fonts and each temple's card artwork (PDF)
+functions/assets/           # fonts/ (shared); temples/<temple id>/<document>/ artwork (PDF)
 ```
 
 Features: `auth` (`auth-checkEmail`, `auth-startSession`), `temples` (who works where, and in
@@ -358,7 +358,8 @@ what role: `temples-list` for the app; `temples-create`, `-setLogo` and
   tests never reach Neon or R2. With the in-memory database,
   `LOCAL_STAFF_EMAIL` is put on every temple's team.
 - **Cards and other documents must match the temple's own design exactly.**
-  A card is the designer's exported artwork (`assets/cards/<template>/`) with
+  A temple's artwork lives under its id, one folder per document
+  (`assets/temples/<temple id>/id-card/`). A card is that exported artwork with
   the member's details set on top by `CardRenderer`, at positions read from a
   finished card exported from the same design file
   (`cards/templates/<template>.ts`). The fonts are the exact releases the

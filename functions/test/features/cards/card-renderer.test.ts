@@ -11,6 +11,10 @@ import { loselingCard } from '../../support/database';
 import { colourAt, pageCount, pageSize, textOn } from '../../support/pdf';
 import { photo, photoColour } from '../../support/photos';
 
+/** Whether two colours are the same, give or take how a page is drawn. */
+const near = (colour: readonly number[], other: readonly number[]) =>
+  colour.every((value, index) => Math.abs(value - other[index]!) < 6);
+
 // The positions asserted here are the ones Canva gives the temple's own cards.
 // If one changes, the printed card no longer matches the design.
 describe('the Drepung Loseling Canada card', () => {
@@ -41,6 +45,14 @@ describe('the Drepung Loseling Canada card', () => {
     }
     const back = await textOn(pdf, 2);
     expect(back.map((run) => run.text)).toContain('If found please return to:');
+  });
+
+  it('fades the large maple leaf on the back behind the small red one', async () => {
+    const back = await colourAt(await card('Tenzin Dolma'), 2);
+
+    // The design's red at 8% over white, then the small leaf's solid red.
+    expect(near(back(120, 70), [249, 238, 238])).toBe(true);
+    expect(near(back(115, 20), [203, 32, 38])).toBe(true);
   });
 
   it('sets the member details where the design has them', async () => {
@@ -132,10 +144,6 @@ describe('the standard card', () => {
     const renderer = await cardRenderer(temple, files);
     return renderer.render({ name, number, validUntil, photo: picture });
   };
-
-  /** Whether two colours are the same, give or take how a page is drawn. */
-  const near = (colour: readonly number[], other: readonly number[]) =>
-    colour.every((value, index) => Math.abs(value - other[index]!) < 6);
 
   /** How far the middle of a run of text is from the middle of the card. */
   const offCentre = (run: { x: number; width: number }) =>

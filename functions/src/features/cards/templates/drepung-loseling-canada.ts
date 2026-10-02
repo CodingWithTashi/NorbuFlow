@@ -2,7 +2,7 @@ import { readAsset } from '../../../core/assets';
 import type { CardTemplate } from '../card-template';
 import { monthNames } from '../month-names';
 
-const artwork = 'drepung-loseling-canada';
+const artwork = ['temples', 'drepung-loseling-canada', 'id-card'];
 const ink = [0.0353, 0.0588, 0.0627] as const;
 const letterSpacing = 0.001;
 
@@ -17,8 +17,8 @@ const column = { x: 29.11285584, width: 138.875 * pixel, snap: pixel / 64 };
  */
 export function drepungLoselingCanada(): CardTemplate {
   return {
-    front: readAsset('cards', artwork, 'front.pdf'),
-    back: readAsset('cards', artwork, 'back.pdf'),
+    front: readAsset(...artwork, 'front.pdf'),
+    back: readAsset(...artwork, 'back.pdf'),
     fonts: {
       regular: readAsset('fonts', 'OpenSans-Regular.ttf'),
       bold: readAsset('fonts', 'OpenSans-Bold.ttf'),
