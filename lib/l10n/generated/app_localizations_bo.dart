@@ -200,6 +200,16 @@ class AppLocalizationsBo extends AppLocalizations {
   }
 
   @override
+  String get templesAdd => 'Add a temple';
+
+  @override
+  String get templesAddLocked => 'Locked';
+
+  @override
+  String get templesAddLockedBody =>
+      'Temples are added by NorbuFlow. Contact us to add another.';
+
+  @override
   String get templeSwitch => 'བརྗེ་བ།';
 
   @override
@@ -533,10 +543,41 @@ class AppLocalizationsBo extends AppLocalizations {
 
   @override
   String get addCropHelp =>
-      'Drag the photo to move it. Slide to zoom.\nThe circle is exactly what shows on the ID card.';
+      'Drag the photo to move it. Pinch to zoom, twist to straighten.\nThe circle is exactly what shows on the ID card.';
 
   @override
   String get addCropZoom => 'Zoom';
+
+  @override
+  String addCropZoomValue(int percent) {
+    return '$percent percent';
+  }
+
+  @override
+  String get addCropZoomOut => 'Zoom out';
+
+  @override
+  String get addCropZoomIn => 'Zoom in';
+
+  @override
+  String get addCropRotate => 'Straighten';
+
+  @override
+  String addCropTiltValue(int degrees) {
+    return '$degrees degrees';
+  }
+
+  @override
+  String get addCropTurnLeft => 'Turn left';
+
+  @override
+  String get addCropTurnRight => 'Turn right';
+
+  @override
+  String get addCropFlip => 'Flip';
+
+  @override
+  String get addCropReset => 'Reset';
 
   @override
   String get addChooseDifferentPhoto => 'Choose a different photo';
@@ -672,7 +713,7 @@ class AppLocalizationsBo extends AppLocalizations {
 
   @override
   String get newCardCropHelp =>
-      'Drag the photo to move it. Slide to zoom.\nThe frame is exactly what prints on the ID card.';
+      'Drag the photo to move it. Pinch to zoom, twist to straighten.\nThe frame is exactly what prints on the ID card.';
 
   @override
   String get newCardSubmit => 'Create ID card';
@@ -704,6 +745,136 @@ class AppLocalizationsBo extends AppLocalizations {
 
   @override
   String get newCardAnother => 'Another card';
+
+  @override
+  String get cardFormPreview => 'Preview ID';
+
+  @override
+  String get cardFormEditTitle => 'Edit member';
+
+  @override
+  String get cardFormEditIntro =>
+      'Change what is needed, then check the card. A new card is made only if the name, photo or ID number changes.';
+
+  @override
+  String get cardFormKeepPhoto =>
+      'This is the photo on file. It stays unless you add a new one.';
+
+  @override
+  String get cardPreviewTitle => 'Preview ID';
+
+  @override
+  String get cardPreviewIntro =>
+      'This is the front of the card. Check it before it is made. Nothing is saved yet.';
+
+  @override
+  String get cardPreviewBack => 'Change details';
+
+  @override
+  String get cardPreviewSave => 'Save changes';
+
+  @override
+  String cardPreviewNumber(Object number) {
+    return 'ID number: $number';
+  }
+
+  @override
+  String get cardPreviewNumberHelp => 'Filled in for you.';
+
+  @override
+  String get cardPreviewNumberTyped => 'Typed by you.';
+
+  @override
+  String get cardPreviewNumberKept => 'The number they have now.';
+
+  @override
+  String get cardPreviewEditNumber => 'Edit ID number';
+
+  @override
+  String get cardNumberEditTitle => 'Edit ID number';
+
+  @override
+  String get cardNumberEditHelp =>
+      'Type the number to print on this card. Numbers only.';
+
+  @override
+  String get cardNumberEditLabel => 'ID number';
+
+  @override
+  String get cardNumberEditApply => 'Use this number';
+
+  @override
+  String cardNumberTakenTitle(Object number) {
+    return 'ID $number already exists';
+  }
+
+  @override
+  String cardNumberTakenBody(Object number, Object name) {
+    return 'ID $number belongs to $name. Replace them with this person? $name will no longer be on the member list.';
+  }
+
+  @override
+  String cardNumberTakenEditBody(Object number, Object name) {
+    return 'ID $number belongs to $name. Please choose another number.';
+  }
+
+  @override
+  String get cardNumberReplace => 'Replace';
+
+  @override
+  String get cardNumberChoose => 'Choose another number';
+
+  @override
+  String get cardSavedTitle => 'Changes saved';
+
+  @override
+  String memberNumber(Object number) {
+    return 'ID $number';
+  }
+
+  @override
+  String get memberEdit => 'Edit';
+
+  @override
+  String get memberNotGiven => 'Not given';
+
+  @override
+  String get memberContactTitle => 'Get in touch';
+
+  @override
+  String get phoneCountryTitle => 'Which country is this number from?';
+
+  @override
+  String phoneCountrySemantics(Object country) {
+    return 'Country: $country';
+  }
+
+  @override
+  String get countryCanada => 'Canada';
+
+  @override
+  String get countryUnitedStates => 'United States';
+
+  @override
+  String get countryIndia => 'India';
+
+  @override
+  String get countryNepal => 'Nepal';
+
+  @override
+  String get countryTaiwan => 'Taiwan';
+
+  @override
+  String get countryFrance => 'France';
+
+  @override
+  String get countryAustralia => 'Australia';
+
+  @override
+  String get countrySwitzerland => 'Switzerland';
+
+  @override
+  String get countryUnitedKingdom => 'United Kingdom';
 
   @override
   String get cardTitle => 'ཚོགས་མིའི་ལག་ཁྱེར།';
@@ -1932,6 +2103,10 @@ class AppLocalizationsBo extends AppLocalizations {
       'This email looks incomplete. Please check it.';
 
   @override
+  String get validationEmailNotInvited =>
+      'This email has not been added to a temple yet. Please ask your temple or NorbuFlow to add it.';
+
+  @override
   String get validationMemberNameRequired => 'Please type the member\'s name.';
 
   @override
@@ -1952,6 +2127,14 @@ class AppLocalizationsBo extends AppLocalizations {
   @override
   String get validationPhoneShort =>
       'Phone number seems short. Please check it.';
+
+  @override
+  String get validationPhoneLong =>
+      'Phone number seems too long. Please check it.';
+
+  @override
+  String get validationMemberNumberInvalid =>
+      'Please type the ID number in numbers only.';
 
   @override
   String get validationDonorRequired => 'Please type the donor’s name.';

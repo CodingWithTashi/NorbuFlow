@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import type { Database } from '../../../src/core/database';
+import { parseInput } from '../../../src/core/validation';
+import { checkEmailInput } from '../../../src/features/auth/auth.input';
 import { AuthService } from '../../../src/features/auth/auth.service';
 import { displayNameFromEmail } from '../../../src/features/auth/display-name';
 import { PostgresUserRepository } from '../../../src/features/auth/postgres-user.repository';
@@ -80,6 +82,47 @@ describe('starting a session', () => {
       details: { reason: 'notOnTeam' },
     });
     expect(await database.query(`select id from users`)).toHaveLength(0);
+  });
+});
+
+describe('checking an email before sending a link', () => {
+  let database: Database;
+  let auth: AuthService;
+
+  beforeEach(async () => {
+    database = await freshDatabase();
+    await addToTeam(database, 'karma.treasurer@gmail.com', 'accountant');
+    auth = new AuthService(
+      new PostgresUserRepository(database),
+      new TempleAccess(new PostgresTempleRepository(database)),
+    );
+    return () => database.close();
+  });
+
+  it('says yes to an address a temple has added', async () => {
+    await expect(auth.isInvited('karma.treasurer@gmail.com')).resolves.toBe(true);
+  });
+
+  it('says no to any other, and keeps nothing about it', async () => {
+    await expect(auth.isInvited('stranger@example.org')).resolves.toBe(false);
+    expect(await database.query(`select id from users`)).toHaveLength(0);
+  });
+
+  it('takes the address however it was typed, but not half an address', () => {
+    expect(parseInput(checkEmailInput, { email: ' Karma.Treasurer@Gmail.com ' })).toEqual({
+      email: 'karma.treasurer@gmail.com',
+    });
+    for (const [email, issue] of [
+      ['karma@', 'emailIncomplete'],
+      [`${'k'.repeat(250)}@gmail.com`, 'emailIncomplete'],
+      ['', 'ownEmailRequired'],
+      ['   ', 'ownEmailRequired'],
+      [undefined, 'ownEmailRequired'],
+    ]) {
+      expect(() => parseInput(checkEmailInput, { email })).toThrow(
+        expect.objectContaining({ details: { fields: { email: issue } } }),
+      );
+    }
   });
 });
 

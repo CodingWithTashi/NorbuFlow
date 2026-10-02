@@ -40,10 +40,16 @@ class AuthViewModel extends Notifier<AuthState> {
 
   AuthRepository get _repository => ref.read(authRepositoryProvider);
 
-  Future<Result<void>> sendSignInLink(String email) async {
+  /// Emails a sign-in link to [email]. With [notify] off the caller shows a
+  /// failure itself, beside the field it is about.
+  Future<Result<void>> sendSignInLink(
+    String email, {
+    bool notify = true,
+  }) async {
     final result = await runCommand(
       ref,
       () => _repository.sendSignInLink(email),
+      notify: notify,
       source: 'auth.sendSignInLink',
     );
     // Asked for while an earlier link is being checked, that check carries on

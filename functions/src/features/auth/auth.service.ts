@@ -11,6 +11,14 @@ export class AuthService {
   ) {}
 
   /**
+   * Whether `email` may sign in, asked before a link is sent so that nobody
+   * waits for an email that cannot let them in.
+   */
+  isInvited(email: string): Promise<boolean> {
+    return this.access.isOnATeam(email);
+  }
+
+  /**
    * Opens the caller's session and returns their profile, creating it on first
    * sign-in. Invite-only: some temple must have that email on its team.
    */

@@ -16,7 +16,7 @@ flutter gen-l10n         # after editing lib/l10n/*.arb
 flutter analyze          # must report "No issues found"
 flutter test             # unit + widget tests; must pass before finishing work
 dart format lib test
-flutter run              # Android/iOS: sign-in is real (Firebase), the rest is faked
+flutter run              # Android/iOS: sign-in, temples and members are real; the rest is faked
 flutter run --dart-define=USE_FIREBASE=false   # everything faked; web and desktop
 ```
 
@@ -24,7 +24,7 @@ Backend, from `functions/`:
 
 ```sh
 npm run typecheck && npm run lint && npm test   # must all pass before finishing work
-npm run test:e2e         # real flows (sign in, new ID card) through the emulators
+npm run test:e2e         # real flows (register a temple, sign in, members) through the emulators
 npm run format
 npm run serve            # functions emulator; point the app at it with
                          #   --dart-define=FUNCTIONS_EMULATOR_HOST=10.0.2.2
@@ -35,12 +35,17 @@ npm run db:migrate       # applies functions/migrations/*.sql that have not run
 npm run db:staff -- <temple-id> <email> <role>   # puts someone on a temple's team
 ```
 
+A temple is registered, and assigned to its admin, with the three requests in
+`functions/ADMIN.md`. They need `ADMIN_KEY` from `functions/.env`.
+
 `functions/.env` holds the backend's secrets (Neon, R2). It is git-ignored,
 deployed with the functions, and also read by `npm run serve`, which therefore
 works on the real database and bucket. To serve on throwaway in-memory
 stand-ins instead, put `STAND_INS=true` and `LOCAL_STAFF_EMAIL=<your address>`
-in `functions/.env.local`. The emulator is plain HTTP, which only debug builds
-allow (`android/app/src/debug/AndroidManifest.xml`).
+in `functions/.env.local`. The emulator runs each function in a process of its
+own, so in-memory stand-ins are shared between functions only when it is
+started with `--inspect-functions` (as `test:e2e` is). The emulator is plain
+HTTP, which only debug builds allow (`android/app/src/debug/AndroidManifest.xml`).
 
 ## Architecture: feature-first MVVM with Riverpod
 
@@ -92,6 +97,11 @@ export), `assistant` ("Improve wording").
   (plain route strings) but nothing else from `app/`.
 - Use plain Riverpod 3 (`Notifier`, `AsyncNotifier`, `.autoDispose`, `.family`
   with constructor arguments). No code generation, no `StateProvider`.
+- A provider must not `ref.watch` another provider's `.future`, and a view
+  must not `ref.read` an `autoDispose` provider it does not also watch: with
+  Riverpod 3.3 either trips an assertion when a covered screen comes back. Do
+  the work in one provider (`memberCardProvider`), and keep providers that
+  are only read alive (`memberActionsProvider`).
 - Screen-scoped view models are `autoDispose`. App-scoped state (session,
   current temple, preferences, members list) is not.
 
@@ -105,7 +115,8 @@ One provider owns each piece of state; everything else derives from it.
   what makes them reload on a temple switch. Do not pass temple ids around.
 - `templesProvider` — temple details (name, logo, accent). The theme follows it.
 - `membersProvider` — the member list. The list, ID card, check-in and reports
-  all read it, so a renewal on one screen shows on all of them.
+  all read it, so a renewal on one screen shows on all of them. A card issued
+  or a member changed is handed to it (`put`), not fetched again.
 - `preferencesProvider` — language, dark mode, Simple Mode.
 - `todayProvider` / `clockProvider` — never call `DateTime.now()` in a view
   model or widget.
@@ -114,15 +125,22 @@ One provider owns each piece of state; everything else derives from it.
 
 ## Fake repositories, moving to the backend one feature at a time
 
-Two things are live, through Firebase and the `functions/` backend: `auth`
-(sign-in) and New ID card (`CardRepository` in `members`: a photo and the
-member's details in; a saved member, a membership number and a print-ready
-card out). Every other repository,
-including the member list and the Add a Member wizard, is still an in-memory
-fake extending `FakeRepository`
+Live, through Firebase and the `functions/` backend:
+
+- `auth`: sign-in.
+- `temple`: the temples assigned to whoever is signed in
+  (`TempleRepository.fetchMemberships`). Saving temple settings and the team
+  are not.
+- `members`: the member list (`MemberRepository.fetchMembers`) and the card
+  flow (`CardRepository`): preview a card, issue it to a new member, change a
+  member on file, fetch the card on file. Renewals, check-ins and the Add a
+  Member wizard are not.
+
+Every other repository is still an in-memory fake extending `FakeRepository`
 (`core/data/fake_repository.dart`), which simulates latency and guarantees that
 only `AppFailure` is thrown. Fakes seed data relative to the clock so the demo
-never goes stale.
+never goes stale. The two members fakes share one set of demo members, so a
+card issued to one shows in the list.
 
 `AppConfig.useFirebase` (on in a normal build, off in tests and with
 `--dart-define=USE_FIREBASE=false`) decides whether the features that have a
@@ -142,8 +160,9 @@ To move a feature to the backend:
 
 `AppConfig.demoMode` shows the "Demo only" shortcuts that stand in for things
 the fakes cannot do (scanning a QR code; tapping the email link while sign-in
-is faked). Photos are `PhotoSource` (`MemoryPhoto` now, `NetworkPhoto` once
-uploads exist).
+is faked). Photos are `PhotoSource`: `MemoryPhoto`, or `NetworkPhoto` for a
+member's photo on file. `PhotoImage` shows both, and keeps a fetched photo on
+the device under its file key: the signed link changes, the key does not.
 
 A finished PDF is printed or shared through `DocumentPrinter`
 (`core/services/document_printer.dart`): printed at the size of its own pages
@@ -152,18 +171,50 @@ jobs; when its documents are real PDFs they go through the same service.
 
 **An ID card on screen is the card itself, never a redrawing.** The backend's
 PDF is the only rendering of a temple's card; the app shows its pages
-(`cardPagesProvider`, `CardPages`) so what is seen is what prints. With the
-backend on, Add a Member opens New ID card (`AppConfig.addMemberWizard`): the
-wizard and the member list's own card screen are still the demo.
+(`DocumentPrinter.photos`, `CardPages`) so what is seen is what prints.
+`AppConfig.demoMembers` (on without the backend) chooses between the demo,
+with its wizard and drawn card, and the real screens: New ID card
+(`CardFormScreen`), the member with their card (`MemberDetailView`) and Edit.
 
-A write that must not happen twice carries an id the app chooses (`NewCard.id`,
-from `newIdProvider`), kept in the form's state for every attempt, so that
-trying again after a lost answer returns the first result instead of repeating
-the write.
+A card never changes once issued, so its PDF and the pictures of its pages are
+kept on the device by card id (`CardFiles`, in `FileCache`) and fetched or
+drawn only once. When the list changes, the files of cards nobody holds any
+more are removed (`MembersViewModel`).
+
+**The card form** (`CardFormViewModel`, one for a new member and one per
+member being edited) has three steps: details, Preview ID, the issued card.
+The preview is the backend's drawing and saves nothing; saving sends exactly
+the request that was previewed. A membership number can be typed only on the
+preview. A number someone else holds comes back as
+`NumberTaken`, not as a failure: a new member may then replace that person's
+record; an edit may not.
+
+**Phone numbers** are typed in a `PhoneField`: a country, preselected from the
+SIM (`homePhoneCountryProvider`, set in `bootstrap`), and the number inside it.
+They are saved with the country's code (`PhoneNumbers.compose`), which is what
+lets `ContactLauncher` open a WhatsApp chat from any device (the app itself,
+or its web page where it is not installed). Only the countries in
+`PhoneCountry` are offered.
+
+A write that must not happen twice carries an id the app chooses
+(`CardRequest.id`, from `newIdProvider`), kept in the form's state for every
+attempt, so that trying again after a lost answer returns the first result
+instead of repeating the write.
 
 A form that takes a photo keeps a `PhotoDraft` in its state and mixes
 `PhotoDraftCommands` into its view model; `PhotoField` shows it and loads the
-crop editor itself.
+crop editor itself. In an edit, `PhotoField.current` is the photo on file, and
+no photo is sent unless a new one is cropped.
+
+The editor (`PhotoCropController`) moves, zooms, straightens (a slider, 45°
+either way), turns by quarters and flips what is framed. The screen and the
+exported photo are drawn by the same `paintPhoto`, and the photo always covers
+the frame. Fingers keep the spot under them: a pinch or twist is anchored
+where they are, a slider or button at the middle of the frame. The editor's
+own recognizer takes a touch on the photo at once, so the page behind never
+scrolls instead. A pinch and a twist each have a little slack, so one does
+not set off the other. Flutter reports some small twists as nearly a whole
+turn: bring the angle within half a turn before using it.
 
 ### Sign-in
 
@@ -182,7 +233,9 @@ new document, which with `singleTop` starts a second, blank copy of the app.
 
 Sign-in is invite-only, and the backend enforces it: `auth-startSession`
 refuses an email that is on no temple's team (`temple_staff`), and the app
-then signs back out and says so.
+then signs back out and says so. To say so sooner, the app first asks
+`auth-checkEmail`: an address that was never added gets no link, and the
+sign-in screen says why under the field (`ValidationIssue.emailNotInvited`).
 
 The link's host (`norbu-flow.firebaseapp.com`) appears in three places that
 must agree: `AndroidManifest.xml`, `ios/Runner/Runner.entitlements`, and the
@@ -199,7 +252,8 @@ functions/src/
   index.ts                  # initialises the Admin SDK; one export per feature
   runtime.ts                # the database and file store the functions run on
   core/
-    callable.ts             # defineCallable, and an error's one way to a response
+    callable.ts             # defineCallable, and how an error reaches the app
+    admin-endpoint.ts       # defineAdminEndpoint: the operator's requests, by key
     caller.ts               # who is calling (a proven email only)
     validation.ts           # zod input → field issues
     errors.ts               # AppError: no Firebase, no HTTP
@@ -221,28 +275,46 @@ functions/migrations/       # numbered SQL, applied in name order
 functions/assets/           # fonts and each temple's card artwork (PDF)
 ```
 
-Features: `auth`, `temples` (who works where, and in what role), `members`
-(`members-create`), `cards` (the renderer; it has no functions of its own).
+Features: `auth` (`auth-checkEmail`, `auth-startSession`), `temples` (who works where, and in
+what role: `temples-list` for the app; `temples-create`, `-setLogo` and
+`-addAdmin` for the operator), `members` (`members-list`, `-card`, `-preview`,
+`-create`, `-update`), `cards` (the renderer; it has no functions of its own).
 
 - A function exported as `auth.startSession` deploys as `auth-startSession`,
   which is the name the app passes to `Backend.call`.
-- Declare every function with `defineCallable`. It rejects callers without an
-  email-link session, validates input against a zod schema, and turns errors
-  into responses. Handlers receive a `Caller` and typed input.
+- Declare every function the app calls with `defineCallable`. It rejects
+  callers without an email-link session, validates input against a zod
+  schema, and turns errors into responses. Handlers receive a `Caller` and
+  typed input.
+- A function the app calls before sign-in is declared with
+  `definePublicCallable` (only `auth-checkEmail`): no session, the same
+  validation. It answers with nothing a stranger should not learn.
+- Declare a function only the operator may call with `defineAdminEndpoint`:
+  a plain HTTP POST carrying `Authorization: Bearer <ADMIN_KEY>`. Its zod
+  messages are plain words, since a person reads them in a terminal.
 - Services depend on interfaces (repositories, `FileStore`), never on a
   store. A feature's `index.ts` builds its service once, lazily, from
   `runtime.ts` and real objects: repositories take a `Database` (or just
   `Sql`), not a promise of one.
 - A feature with no functions of its own exports what others use from its
-  `index.ts`, already wired: `temples` gives `templeAccess`, `cards` gives
-  `cardRenderer`.
+  `index.ts`: `temples` gives `templeAccess`, already wired; `cards` gives
+  `cardRenderer`, which is handed the file store a temple's logo is in.
 - **Who checks what.** The input schema (`<feature>.input.ts`) is the
   request's contract: every value present, trimmed, within its limits. The
   service takes that as given and owns the rules that need knowledge, such as
   whether a name fits the temple's card.
 - A function that adds something takes an `id` chosen by the app and, asked
-  again with the same id, returns what it made the first time
-  (`members-create`). The app retries when an answer is lost.
+  again with the same id, returns what it made the first time. For members
+  that id is the card's (`member_cards.id`), which covers adding, replacing
+  and changing alike. It is looked for under the temple's lock, so a retry
+  that arrives while the first is still at work waits and gets its result.
+- **Membership numbers.** A new member gets the temple's next free number;
+  one typed by hand is used as it is and skipped when the count reaches it.
+  Whoever writes a number locks the temple's row first. A number that is
+  taken is an answer (`{ taken }`), not an error: the caller decides.
+- **Sign-in is for added emails only.** `temples-addAdmin` puts an email on
+  a temple's team and gives it a Firebase Authentication account. Nothing is
+  emailed: the person asks for a link in the app.
 - Libraries only some functions need (`pg`, the S3 client, `sharp`, `pdf-lib`)
   are loaded with `await import()` where they are used, so the rest start fast.
 - Throw `AppError.*` for anything the app should see. Everything else is
@@ -274,7 +346,10 @@ Features: `auth`, `temples` (who works where, and in what role), `members`
   the invitation list for sign-in, so `auth` asks the same `TempleAccess`.
 - **Files.** Photos and generated documents go to Cloudflare R2 through the
   `FileStore` port in `core/file-store.ts`; the database stores only their
-  keys. Keys start `temples/<temple id>/`.
+  keys. Keys start `temples/<temple id>/`. A card's photo and PDF sit side
+  by side (`members/<member id>/cards/<card id>.jpg` and `.pdf`); a logo gets
+  a new key each time it is replaced. The app is given a member's photo as a
+  link signed for a week (`FileStore.urlFor`) together with its key.
 - **Stand-ins.** Tests build an in-memory Postgres (PGlite, same migrations)
   and an `InMemoryFileStore` themselves. `runtime.ts` uses the same pair
   instead of Neon and R2 when `standIns` is on: only in the emulator, for a
@@ -292,8 +367,14 @@ Features: `auth`, `temples` (who works where, and in what role), `members`
   them: the text must land on the same thousandth of a point. The renderer
   has no Firebase imports, so it can move to Cloud Run unchanged if rendering
   ever outgrows a function.
+- **A temple with no design of its own prints the `standard` card**
+  (`cards/templates/standard.ts`): NorbuFlow's layout, drawn in code, with
+  the temple's name and logo. Every template keeps the same photo box, which
+  is what the app crops to (`CardPhoto`).
 - Unit tests (`test/`) cover services and the core with fakes. `test/e2e`
   drives real flows through the emulators. Add both with each new function.
+- A migration goes to the database before the functions that need it are
+  deployed: `npm run db:migrate`, then `npm run deploy`.
 
 ## Error handling
 
@@ -383,6 +464,9 @@ Window classes (`core/layout/breakpoints.dart`): compact `< 600`, medium
 - `test/app_test.dart` visits every route on a phone, tablet portrait, tablet
   landscape, in dark mode, and in Tibetan with Simple Mode. Add new routes to
   `_locations` there; a layout overflow anywhere fails it.
+- `test/support/cards.dart` has the stand-ins for printing, WhatsApp and
+  email, and the camera. The real member screens run on the fakes with
+  `AppConfig(demoMembers: false)`; `test/app_test.dart` visits them too.
 - Add a test with each new view model rule and each bug fix.
 
 ## Adding a screen

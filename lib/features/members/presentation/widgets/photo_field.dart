@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/layout/responsive.dart';
+import '../../../../core/models/photo_source.dart';
 import '../../../../core/services/photo_picker.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -24,10 +25,14 @@ class PhotoField extends StatefulWidget {
     required this.onCancelCrop,
     required this.help,
     required this.cropHelp,
+    this.current,
     this.errorText,
   });
 
   final PhotoDraft photo;
+
+  /// The photo already on file, shown until a new one is chosen.
+  final PhotoSource? current;
   final PhotoCropController crop;
   final ValueChanged<PhotoOrigin> onPick;
   final VoidCallback onAdjustCrop;
@@ -72,6 +77,7 @@ class _PhotoFieldState extends State<PhotoField> {
       :onCancelCrop,
       :help,
       :cropHelp,
+      :current,
       :errorText,
     ) = widget;
     final colors = context.colors;
@@ -132,9 +138,11 @@ class _PhotoFieldState extends State<PhotoField> {
     final frame = crop.shape.sized(_previewSize);
     final outline = _OutlineClipper(crop.shape);
     final chosen = photo.cropped;
+    // A new photo, once cropped, takes the place of the one on file.
+    final shown = chosen ?? current;
     return Column(
       children: [
-        if (chosen != null) ...[
+        if (shown != null) ...[
           CustomPaint(
             // A ring just outside the photo, with a sliver of page between.
             foregroundPainter: _OutlinePainter.ring(crop.shape),
@@ -144,26 +152,31 @@ class _PhotoFieldState extends State<PhotoField> {
                 clipper: outline,
                 child: SizedBox.fromSize(
                   size: frame,
-                  child: PhotoImage(chosen),
+                  child: ColoredBox(
+                    color: colors.card,
+                    child: PhotoImage(shown),
+                  ),
                 ),
               ),
             ),
           ),
           const SizedBox(height: 16),
-          IconLabel(
-            icon: AppIcons.check,
-            label: l10n.addPhotoReady,
-            style: type.sans(
-              17,
-              weight: FontWeight.w600,
-              color: colors.success,
+          if (chosen != null) ...[
+            IconLabel(
+              icon: AppIcons.check,
+              label: l10n.addPhotoReady,
+              style: type.sans(
+                17,
+                weight: FontWeight.w600,
+                color: colors.success,
+              ),
             ),
-          ),
-          LinkButton(
-            label: l10n.addAdjustCrop,
-            underline: true,
-            onPressed: onAdjustCrop,
-          ),
+            LinkButton(
+              label: l10n.addAdjustCrop,
+              underline: true,
+              onPressed: onAdjustCrop,
+            ),
+          ],
         ] else ...[
           CustomPaint(
             foregroundPainter: _OutlinePainter.placeholder(crop.shape),

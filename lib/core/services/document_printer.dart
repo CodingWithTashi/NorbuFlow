@@ -7,6 +7,7 @@ import 'package:pdf/widgets.dart' as pdf;
 import 'package:printing/printing.dart';
 
 import '../error/app_failure.dart';
+import '../models/photo_source.dart';
 
 /// What the device can do with a finished PDF: print it, pass it to another
 /// app, or draw it for the screen.
@@ -19,6 +20,13 @@ abstract interface class DocumentPrinter {
 
   /// Each page of [pdf] as a PNG, to show the document itself on screen.
   Future<List<Uint8List>> pages(Uint8List pdf);
+}
+
+extension DocumentPhotos on DocumentPrinter {
+  /// The pages of [pdf] as pictures, so a screen shows the document itself.
+  Future<List<MemoryPhoto>> photos(Uint8List pdf) async => [
+    for (final page in await pages(pdf)) MemoryPhoto(page),
+  ];
 }
 
 final class DeviceDocumentPrinter implements DocumentPrinter {

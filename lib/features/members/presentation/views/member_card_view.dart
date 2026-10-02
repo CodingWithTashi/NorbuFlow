@@ -98,7 +98,7 @@ class _CardPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     final status = member.statusOn(ref.watch(todayProvider));
-    final number = memberNumberLabel(temple, member.number);
+    final number = member.number;
     final outbox = ref.read(outboxActionsProvider);
 
     Future<void> share() async {

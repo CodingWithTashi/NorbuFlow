@@ -23,6 +23,36 @@ export function call(name: string, data: unknown, idToken?: string) {
   return post(`${functions}/${name}`, { data }, idToken);
 }
 
+/** ADMIN_KEY in .env.demo-norbu-flow. */
+export const operatorKey = 'e2e-operator-key';
+
+/** Calls an operator's endpoint the way curl does: JSON in, JSON out. `null` sends no key. */
+export function operate(name: string, body: unknown, key: string | null = operatorKey) {
+  return post(`${functions}/${name}`, body, key ?? undefined);
+}
+
+/** Sends a file as the body of a request to an operator's endpoint. */
+export async function upload(name: string, bytes: Uint8Array, contentType: string) {
+  const response = await fetch(`${functions}/${name}`, {
+    method: 'POST',
+    headers: { 'Content-Type': contentType, Authorization: `Bearer ${operatorKey}` },
+    // Bytes of its own, not a view of shared memory, which fetch does not take.
+    body: new Uint8Array(bytes),
+  });
+  return { status: response.status, body: await response.json() };
+}
+
+/** The accounts Firebase Authentication has for `email`. */
+export async function accountsFor(email: string): Promise<{ email: string }[]> {
+  const { body } = await post(
+    `${identity}/projects/${project}/accounts:lookup`,
+    { email: [email] },
+    // How the emulator is told a request comes from the Admin SDK.
+    'owner',
+  );
+  return body.users ?? [];
+}
+
 /** What the app does: ask for a link, then exchange the one that arrives. */
 export async function signInWithEmailLink(email: string): Promise<string> {
   await post(`${identity}/accounts:sendOobCode?key=fake`, {

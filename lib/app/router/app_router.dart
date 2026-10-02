@@ -11,10 +11,11 @@ import '../../features/auth/presentation/views/check_email_screen.dart';
 import '../../features/auth/presentation/views/login_screen.dart';
 import '../../features/home/presentation/views/home_screen.dart';
 import '../../features/members/presentation/views/add_member_screen.dart';
+import '../../features/members/presentation/views/card_form_screen.dart';
 import '../../features/members/presentation/views/check_in_screen.dart';
 import '../../features/members/presentation/views/member_card_view.dart';
+import '../../features/members/presentation/views/member_detail_view.dart';
 import '../../features/members/presentation/views/members_screen.dart';
-import '../../features/members/presentation/views/new_card_screen.dart';
 import '../../features/offerings/domain/offering.dart';
 import '../../features/offerings/presentation/views/donation_screen.dart';
 import '../../features/offerings/presentation/views/offerings_screen.dart';
@@ -141,21 +142,32 @@ final routerProvider = Provider<GoRouter>((ref) {
                     path: 'add',
                     // With the backend on, a member is added by the flow that
                     // issues their real number and card.
-                    redirect: (_, _) =>
-                        ref.read(appConfigProvider).addMemberWizard
+                    redirect: (_, _) => ref.read(appConfigProvider).demoMembers
                         ? null
                         : AppRoutes.newCard,
                     builder: (_, _) => const AddMemberScreen(),
                   ),
                   GoRoute(
                     path: 'card',
-                    builder: (_, _) => const NewCardScreen(),
+                    builder: (_, _) => const CardFormScreen(),
                   ),
                   GoRoute(
                     path: ':memberId',
-                    builder: (_, state) => MemberCardScreen(
-                      memberId: state.pathParameters['memberId']!,
-                    ),
+                    // The demo draws a card; the backend's is the printed one.
+                    builder: (_, state) {
+                      final memberId = state.pathParameters['memberId']!;
+                      return ref.read(appConfigProvider).demoMembers
+                          ? MemberCardScreen(memberId: memberId)
+                          : MemberDetailScreen(memberId: memberId);
+                    },
+                    routes: [
+                      GoRoute(
+                        path: 'edit',
+                        builder: (_, state) => EditMemberScreen(
+                          memberId: state.pathParameters['memberId']!,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

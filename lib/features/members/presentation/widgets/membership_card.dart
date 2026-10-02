@@ -24,7 +24,7 @@ class MembershipCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final type = context.type;
     final l10n = context.l10n;
-    final number = memberNumberLabel(temple, member.number);
+    final number = member.number;
     final expiry = member.expiresOn;
 
     Widget fact(

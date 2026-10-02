@@ -51,6 +51,9 @@ export interface CardTemplate {
       text: (validUntil: CalendarDate) => string;
     };
 
-  numberLabel: TextStyle & { x: number; baseline: number; text: string };
-  number: TextStyle & { x: number; baseline: number };
+  numberLabel: TextStyle & Anchor & { text: string };
+  number: TextStyle & Anchor;
 }
+
+/** Where a line of text sits: starting at `x`, or centred in `column`. */
+export type Anchor = { baseline: number } & ({ x: number } | { column: TextColumn });

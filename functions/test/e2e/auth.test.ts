@@ -47,3 +47,23 @@ describe('auth-startSession', () => {
     expect(body.error.status).toBe('UNAUTHENTICATED');
   });
 });
+
+describe('auth-checkEmail', () => {
+  const checkEmail = (email: unknown) => call('auth-checkEmail', { email });
+
+  it('tells the sign-in screen, before anyone is signed in, whether an address was added', async () => {
+    const added = await checkEmail(' Front.Desk@Example.org ');
+    const stranger = await checkEmail('visitor@example.org');
+
+    expect(added.status, JSON.stringify(added.body)).toBe(200);
+    expect(added.body.result).toEqual({ invited: true });
+    expect(stranger.body.result).toEqual({ invited: false });
+  });
+
+  it('refuses half an address, naming the field', async () => {
+    const { status, body } = await checkEmail('visitor@');
+
+    expect(status).toBe(400);
+    expect(body.error.details.fields).toEqual({ email: 'emailIncomplete' });
+  });
+});

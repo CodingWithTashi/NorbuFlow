@@ -4,6 +4,9 @@ enum ValidationIssue {
   ownEmailRequired,
   theirEmailRequired,
   emailIncomplete,
+
+  /// Typed on the sign-in screen, but no temple has added it.
+  emailNotInvited,
   memberNameRequired,
 
   /// Does not fit on the temple's printed card.
@@ -16,6 +19,10 @@ enum ValidationIssue {
   /// Not a picture, or too large to send.
   photoUnreadable,
   phoneTooShort,
+  phoneTooLong,
+
+  /// A membership number typed by hand that is not digits above zero.
+  memberNumberInvalid,
   donorRequired,
   purposeRequired,
   contactIncomplete,

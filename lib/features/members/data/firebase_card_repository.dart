@@ -2,40 +2,100 @@ import 'dart:convert';
 
 import '../../../core/data/backend.dart';
 import '../../../core/error/failure_mapper.dart';
+import '../../../core/services/file_cache.dart';
 import '../../../core/utils/json.dart';
 import '../domain/card.dart';
+import '../domain/member.dart';
+import 'member_json.dart';
 
-/// Issues cards through the backend's `members-create`, which saves the
-/// member, assigns their number and prints the temple's own card design.
+/// Cards through the backend, which saves the member, numbers them and prints
+/// the temple's card. A card is kept on the device, so it is fetched once.
 final class FirebaseCardRepository implements CardRepository {
-  FirebaseCardRepository(this._backend);
+  FirebaseCardRepository(this._backend, this._cache);
 
-  /// Longer than the 60 seconds the function itself is given, so the app
-  /// never gives up on a card the backend goes on to issue.
+  /// Longer than the 60 seconds the functions themselves are given, so the
+  /// app never gives up on a card the backend goes on to issue.
   static const _timeout = Duration(seconds: 75);
 
   final Backend _backend;
+  final FileCache _cache;
 
   @override
-  Future<IssuedCard> issue(NewCard card) => guardFailures(() async {
+  Future<CardPreview> preview(String templeId, CardRequest request) =>
+      guardFailures(() async {
+        final response = await _backend.call(
+          'members-preview',
+          input: {
+            'templeId': templeId,
+            'memberId': ?request.memberId,
+            'name': request.name,
+            'photo': ?_encoded(request.photo),
+            'number': ?request.number,
+          },
+          timeout: _timeout,
+        );
+        return CardPreview(
+          number: response['number']! as String,
+          label: response['label']! as String,
+          pdf: pdfFromJson(response['card']),
+        );
+      });
+
+  @override
+  Future<CardOutcome> issue(
+    String templeId,
+    CardRequest request, {
+    bool replace = false,
+  }) => guardFailures(() async {
+    final memberId = request.memberId;
     final response = await _backend.call(
-      'members-create',
+      memberId == null ? 'members-create' : 'members-update',
       input: {
-        'id': card.id,
-        'name': card.name,
-        'phone': card.phone,
-        'email': card.email,
-        'photo': base64Encode(card.photo),
+        'templeId': templeId,
+        'id': request.id,
+        'memberId': ?memberId,
+        'name': request.name,
+        'phone': request.phone,
+        'email': request.email,
+        'photo': ?_encoded(request.photo),
+        'number': ?request.number,
+        if (replace) 'replace': true,
       },
       timeout: _timeout,
     );
-    final member = jsonObject(response['member']);
-    final printed = jsonObject(response['card']);
-    return IssuedCard(
-      number: member['number']! as String,
-      name: member['name']! as String,
-      expiresOn: DateTime.parse(member['expiresOn']! as String),
-      pdf: base64Decode(printed['pdf']! as String),
-    );
+    if (response['taken'] case final taken?) {
+      final holder = jsonObject(taken);
+      return NumberTaken(
+        name: holder['name']! as String,
+        number: holder['number']! as String,
+      );
+    }
+    return CardIssued(await _kept(issuedCardFromJson(response)));
   });
+
+  @override
+  Future<IssuedCard> fetch(String templeId, Member member) =>
+      guardFailures(() async {
+        if (member.cardId case final cardId?) {
+          final pdf = await _cache.read(CardFiles.pdf(cardId));
+          if (pdf != null) return IssuedCard(member: member, pdf: pdf);
+        }
+        final response = await _backend.call(
+          'members-card',
+          input: {'templeId': templeId, 'memberId': member.id},
+          timeout: _timeout,
+        );
+        return _kept(issuedCardFromJson(response));
+      });
+
+  /// Keeps [card] on the device under its own id, and hands it back.
+  Future<IssuedCard> _kept(IssuedCard card) async {
+    if (card.member.cardId case final cardId?) {
+      await _cache.write(CardFiles.pdf(cardId), card.pdf);
+    }
+    return card;
+  }
+
+  static String? _encoded(List<int>? photo) =>
+      photo == null ? null : base64Encode(photo);
 }

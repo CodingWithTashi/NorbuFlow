@@ -2,7 +2,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/config/app_config.dart';
+import '../../../../core/error/app_failure.dart';
+import '../../../../core/error/result.dart';
 import '../../../../core/error/validation_issue.dart';
+import '../../../../core/feedback/app_messenger.dart';
 import '../../../../core/utils/validators.dart';
 import 'auth_view_model.dart';
 
@@ -40,7 +43,7 @@ class LoginViewModel extends Notifier<LoginState> {
   }
 
   /// Validates the address and requests a sign-in link. Returns whether the
-  /// link was sent.
+  /// link was sent: it is not, for an address no temple has added.
   Future<bool> submit() async {
     final email = state.email.trim();
     final issue = Validators.requiredEmail(
@@ -54,8 +57,21 @@ class LoginViewModel extends Notifier<LoginState> {
     state = state.copyWith(submitting: true);
     final result = await ref
         .read(authViewModelProvider.notifier)
-        .sendSignInLink(email);
-    if (ref.mounted) state = state.copyWith(submitting: false);
+        .sendSignInLink(email, notify: false);
+    if (!ref.mounted) return false;
+    switch (result) {
+      case Ok():
+        state = state.copyWith(submitting: false);
+      // No link was sent: the address is the problem, so it is said there.
+      case Err(failure: PermissionFailure(reason: PermissionReason.notOnTeam)):
+        state = state.copyWith(
+          submitting: false,
+          issue: () => ValidationIssue.emailNotInvited,
+        );
+      case Err(:final failure):
+        ref.read(appMessengerProvider.notifier).showFailure(failure);
+        state = state.copyWith(submitting: false);
+    }
     return result.isOk;
   }
 }

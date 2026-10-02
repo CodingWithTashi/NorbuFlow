@@ -440,6 +440,24 @@ abstract class AppLocalizations {
   /// **'You are: {role}'**
   String templesYouAre(Object role);
 
+  /// No description provided for @templesAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a temple'**
+  String get templesAdd;
+
+  /// No description provided for @templesAddLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Locked'**
+  String get templesAddLocked;
+
+  /// No description provided for @templesAddLockedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Temples are added by NorbuFlow. Contact us to add another.'**
+  String get templesAddLockedBody;
+
   /// No description provided for @templeSwitch.
   ///
   /// In en, this message translates to:
@@ -1031,7 +1049,7 @@ abstract class AppLocalizations {
   /// No description provided for @addCropHelp.
   ///
   /// In en, this message translates to:
-  /// **'Drag the photo to move it. Slide to zoom.\nThe circle is exactly what shows on the ID card.'**
+  /// **'Drag the photo to move it. Pinch to zoom, twist to straighten.\nThe circle is exactly what shows on the ID card.'**
   String get addCropHelp;
 
   /// No description provided for @addCropZoom.
@@ -1039,6 +1057,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Zoom'**
   String get addCropZoom;
+
+  /// No description provided for @addCropZoomValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent} percent'**
+  String addCropZoomValue(int percent);
+
+  /// No description provided for @addCropZoomOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Zoom out'**
+  String get addCropZoomOut;
+
+  /// No description provided for @addCropZoomIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Zoom in'**
+  String get addCropZoomIn;
+
+  /// No description provided for @addCropRotate.
+  ///
+  /// In en, this message translates to:
+  /// **'Straighten'**
+  String get addCropRotate;
+
+  /// No description provided for @addCropTiltValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{degrees} degrees'**
+  String addCropTiltValue(int degrees);
+
+  /// No description provided for @addCropTurnLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn left'**
+  String get addCropTurnLeft;
+
+  /// No description provided for @addCropTurnRight.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn right'**
+  String get addCropTurnRight;
+
+  /// No description provided for @addCropFlip.
+  ///
+  /// In en, this message translates to:
+  /// **'Flip'**
+  String get addCropFlip;
+
+  /// No description provided for @addCropReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset'**
+  String get addCropReset;
 
   /// No description provided for @addChooseDifferentPhoto.
   ///
@@ -1283,7 +1355,7 @@ abstract class AppLocalizations {
   /// No description provided for @newCardCropHelp.
   ///
   /// In en, this message translates to:
-  /// **'Drag the photo to move it. Slide to zoom.\nThe frame is exactly what prints on the ID card.'**
+  /// **'Drag the photo to move it. Pinch to zoom, twist to straighten.\nThe frame is exactly what prints on the ID card.'**
   String get newCardCropHelp;
 
   /// No description provided for @newCardSubmit.
@@ -1339,6 +1411,234 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Another card'**
   String get newCardAnother;
+
+  /// No description provided for @cardFormPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview ID'**
+  String get cardFormPreview;
+
+  /// No description provided for @cardFormEditTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit member'**
+  String get cardFormEditTitle;
+
+  /// No description provided for @cardFormEditIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Change what is needed, then check the card. A new card is made only if the name, photo or ID number changes.'**
+  String get cardFormEditIntro;
+
+  /// No description provided for @cardFormKeepPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'This is the photo on file. It stays unless you add a new one.'**
+  String get cardFormKeepPhoto;
+
+  /// No description provided for @cardPreviewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview ID'**
+  String get cardPreviewTitle;
+
+  /// No description provided for @cardPreviewIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'This is the front of the card. Check it before it is made. Nothing is saved yet.'**
+  String get cardPreviewIntro;
+
+  /// No description provided for @cardPreviewBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Change details'**
+  String get cardPreviewBack;
+
+  /// No description provided for @cardPreviewSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save changes'**
+  String get cardPreviewSave;
+
+  /// No description provided for @cardPreviewNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'ID number: {number}'**
+  String cardPreviewNumber(Object number);
+
+  /// No description provided for @cardPreviewNumberHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Filled in for you.'**
+  String get cardPreviewNumberHelp;
+
+  /// No description provided for @cardPreviewNumberTyped.
+  ///
+  /// In en, this message translates to:
+  /// **'Typed by you.'**
+  String get cardPreviewNumberTyped;
+
+  /// No description provided for @cardPreviewNumberKept.
+  ///
+  /// In en, this message translates to:
+  /// **'The number they have now.'**
+  String get cardPreviewNumberKept;
+
+  /// No description provided for @cardPreviewEditNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit ID number'**
+  String get cardPreviewEditNumber;
+
+  /// No description provided for @cardNumberEditTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit ID number'**
+  String get cardNumberEditTitle;
+
+  /// No description provided for @cardNumberEditHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Type the number to print on this card. Numbers only.'**
+  String get cardNumberEditHelp;
+
+  /// No description provided for @cardNumberEditLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'ID number'**
+  String get cardNumberEditLabel;
+
+  /// No description provided for @cardNumberEditApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Use this number'**
+  String get cardNumberEditApply;
+
+  /// No description provided for @cardNumberTakenTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'ID {number} already exists'**
+  String cardNumberTakenTitle(Object number);
+
+  /// No description provided for @cardNumberTakenBody.
+  ///
+  /// In en, this message translates to:
+  /// **'ID {number} belongs to {name}. Replace them with this person? {name} will no longer be on the member list.'**
+  String cardNumberTakenBody(Object number, Object name);
+
+  /// No description provided for @cardNumberTakenEditBody.
+  ///
+  /// In en, this message translates to:
+  /// **'ID {number} belongs to {name}. Please choose another number.'**
+  String cardNumberTakenEditBody(Object number, Object name);
+
+  /// No description provided for @cardNumberReplace.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace'**
+  String get cardNumberReplace;
+
+  /// No description provided for @cardNumberChoose.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose another number'**
+  String get cardNumberChoose;
+
+  /// No description provided for @cardSavedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes saved'**
+  String get cardSavedTitle;
+
+  /// No description provided for @memberNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'ID {number}'**
+  String memberNumber(Object number);
+
+  /// No description provided for @memberEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get memberEdit;
+
+  /// No description provided for @memberNotGiven.
+  ///
+  /// In en, this message translates to:
+  /// **'Not given'**
+  String get memberNotGiven;
+
+  /// No description provided for @memberContactTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Get in touch'**
+  String get memberContactTitle;
+
+  /// No description provided for @phoneCountryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Which country is this number from?'**
+  String get phoneCountryTitle;
+
+  /// No description provided for @phoneCountrySemantics.
+  ///
+  /// In en, this message translates to:
+  /// **'Country: {country}'**
+  String phoneCountrySemantics(Object country);
+
+  /// No description provided for @countryCanada.
+  ///
+  /// In en, this message translates to:
+  /// **'Canada'**
+  String get countryCanada;
+
+  /// No description provided for @countryUnitedStates.
+  ///
+  /// In en, this message translates to:
+  /// **'United States'**
+  String get countryUnitedStates;
+
+  /// No description provided for @countryIndia.
+  ///
+  /// In en, this message translates to:
+  /// **'India'**
+  String get countryIndia;
+
+  /// No description provided for @countryNepal.
+  ///
+  /// In en, this message translates to:
+  /// **'Nepal'**
+  String get countryNepal;
+
+  /// No description provided for @countryTaiwan.
+  ///
+  /// In en, this message translates to:
+  /// **'Taiwan'**
+  String get countryTaiwan;
+
+  /// No description provided for @countryFrance.
+  ///
+  /// In en, this message translates to:
+  /// **'France'**
+  String get countryFrance;
+
+  /// No description provided for @countryAustralia.
+  ///
+  /// In en, this message translates to:
+  /// **'Australia'**
+  String get countryAustralia;
+
+  /// No description provided for @countrySwitzerland.
+  ///
+  /// In en, this message translates to:
+  /// **'Switzerland'**
+  String get countrySwitzerland;
+
+  /// No description provided for @countryUnitedKingdom.
+  ///
+  /// In en, this message translates to:
+  /// **'United Kingdom'**
+  String get countryUnitedKingdom;
 
   /// No description provided for @cardTitle.
   ///
@@ -3413,6 +3713,12 @@ abstract class AppLocalizations {
   /// **'This email looks incomplete. Please check it.'**
   String get validationEmailIncomplete;
 
+  /// No description provided for @validationEmailNotInvited.
+  ///
+  /// In en, this message translates to:
+  /// **'This email has not been added to a temple yet. Please ask your temple or NorbuFlow to add it.'**
+  String get validationEmailNotInvited;
+
   /// No description provided for @validationMemberNameRequired.
   ///
   /// In en, this message translates to:
@@ -3448,6 +3754,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Phone number seems short. Please check it.'**
   String get validationPhoneShort;
+
+  /// No description provided for @validationPhoneLong.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone number seems too long. Please check it.'**
+  String get validationPhoneLong;
+
+  /// No description provided for @validationMemberNumberInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Please type the ID number in numbers only.'**
+  String get validationMemberNumberInvalid;
 
   /// No description provided for @validationDonorRequired.
   ///

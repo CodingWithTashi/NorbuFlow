@@ -10,6 +10,7 @@ import '../../../../core/widgets/decor.dart';
 import '../../domain/temple.dart';
 import '../temple_labels.dart';
 import '../view_models/temple_session.dart';
+import '../widgets/add_temple_locked.dart';
 
 /// First screen after sign-in: choose which temple to work in. Choosing one
 /// is what lets the router into the app.
@@ -58,6 +59,8 @@ class TemplePickerScreen extends ConsumerWidget {
                         ),
                     ],
                   ),
+                  const SizedBox(height: 18),
+                  const AddTempleLocked(),
                 ],
               ),
             ),
@@ -137,11 +140,13 @@ class _TempleCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    temple.tradition,
-                    style: type.sans(16, color: colors.inkMuted),
-                  ),
-                  const SizedBox(height: 4),
+                  if (temple.tradition.isNotEmpty) ...[
+                    Text(
+                      temple.tradition,
+                      style: type.sans(16, color: colors.inkMuted),
+                    ),
+                    const SizedBox(height: 4),
+                  ],
                   Text(
                     context.l10n.templesYouAre(
                       membership.role.label(context.l10n),

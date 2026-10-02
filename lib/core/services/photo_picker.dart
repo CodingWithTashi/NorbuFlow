@@ -27,7 +27,9 @@ final class DevicePhotoPicker implements PhotoPicker {
           PhotoOrigin.camera => ImageSource.camera,
           PhotoOrigin.gallery => ImageSource.gallery,
         },
-        preferredCameraDevice: CameraDevice.front,
+        // The back camera: staff photograph the member, and a phone saves
+        // what its front camera sees mirrored.
+        preferredCameraDevice: CameraDevice.rear,
         // Plenty for an ID card and keeps memory use modest.
         maxWidth: 1600,
         maxHeight: 1600,

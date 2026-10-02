@@ -11,7 +11,8 @@ class AppConfig {
     this.demoEmail = 'dolma@jangchub.org',
     this.demoSignInLink = 'https://norbuflow.app/demo-sign-in',
     this.fakeLatency = const Duration(milliseconds: 350),
-  });
+    bool? demoMembers,
+  }) : _demoMembers = demoMembers;
 
   /// This build's configuration. `--dart-define=USE_FIREBASE=false` runs it
   /// where no Firebase app is configured (web, desktop).
@@ -49,13 +50,15 @@ class AppConfig {
   /// Round-trip delay simulated by the fake repositories.
   final Duration fakeLatency;
 
+  final bool? _demoMembers;
+
   /// Whether sign-in is simulated: no email is sent, so a "Demo only" button
   /// stands in for tapping the link.
   bool get demoSignIn => demoMode && !useFirebase;
 
-  /// Whether Add a Member is the demo wizard, whose membership type and
-  /// payment steps the backend does not have yet. Off, it is New ID card.
-  bool get addMemberWizard => !useFirebase;
+  /// Whether members are still the demo (the wizard and a drawn card), not
+  /// New ID card and the backend's card. Follows [useFirebase] unless set.
+  bool get demoMembers => _demoMembers ?? !useFirebase;
 }
 
 final appConfigProvider = Provider<AppConfig>(

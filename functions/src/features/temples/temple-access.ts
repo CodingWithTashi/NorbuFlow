@@ -15,6 +15,11 @@ export class TempleAccess {
     return roles;
   }
 
+  /** Whether any temple has `email` on its team: who may sign in at all. */
+  async isOnATeam(email: string): Promise<boolean> {
+    return (await this.temples.rolesOf(email)).length > 0;
+  }
+
   /**
    * The temple the caller is working in, if their role there is one of
    * `allowed`. Someone who works at a single temple may leave `templeId` out.

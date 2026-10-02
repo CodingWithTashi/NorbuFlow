@@ -4,7 +4,6 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_icon.dart';
 import '../../../core/widgets/decor.dart';
 import '../../../l10n/generated/app_localizations.dart';
-import '../../temple/domain/temple.dart';
 import '../domain/member.dart';
 
 extension MembershipTypeLabels on MembershipType {
@@ -52,10 +51,6 @@ extension MembershipStatusPresentation on MembershipStatus {
     MembershipStatus.expired => PillTone.danger,
   };
 }
-
-/// `JC-0142`: the temple's monogram and the zero-padded member number.
-String memberNumberLabel(Temple temple, int number) =>
-    '${temple.monogram}-${number.toString().padLeft(4, '0')}';
 
 class MembershipStatusPill extends StatelessWidget {
   const MembershipStatusPill(this.status, {super.key});

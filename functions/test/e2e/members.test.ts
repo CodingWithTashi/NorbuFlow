@@ -40,6 +40,13 @@ describe('members-create', () => {
       joinedOn: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
       renewedOn: member.joinedOn,
       expiresOn: expect.stringMatching(/^\d{4}-07-31$/),
+      // The card is the request's own, and its photo is filed beside it.
+      cardId: tenzin.id,
+      photoKey: expect.stringMatching(
+        new RegExp(`/members/${tenzin.id}/cards/${tenzin.id}\\.jpg$`),
+      ),
+      // The emulators keep files in memory, which nothing can link to.
+      photoUrl: null,
     });
     expect(second.body.result.member).toMatchObject({ number: '194915309', email: null });
 

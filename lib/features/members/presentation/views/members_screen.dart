@@ -14,15 +14,14 @@ import '../../../../core/widgets/async_value_view.dart';
 import '../../../../core/widgets/avatars.dart';
 import '../../../../core/widgets/buttons.dart';
 import '../../../../core/widgets/decor.dart';
-import '../../../temple/domain/temple.dart';
-import '../../../temple/presentation/view_models/temple_session.dart';
 import '../../domain/member.dart';
 import '../member_labels.dart';
 import '../view_models/members_view_model.dart';
 import 'member_card_view.dart';
+import 'member_detail_view.dart';
 
-/// The member directory. On phones a row opens the member's ID card; on
-/// tablets the card appears beside the list.
+/// The member directory. On phones a row opens the member; on tablets they
+/// appear beside the list.
 class MembersScreen extends ConsumerWidget {
   const MembersScreen({super.key});
 
@@ -37,6 +36,7 @@ class MembersScreen extends ConsumerWidget {
           );
         }
         final selectedId = ref.watch(selectedMemberProvider);
+        final demo = ref.watch(appConfigProvider).demoMembers;
         return Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -52,7 +52,12 @@ class MembersScreen extends ConsumerWidget {
             Expanded(
               child: selectedId == null
                   ? MessageView(message: context.l10n.membersSelectHint)
-                  : MemberCardView(
+                  : demo
+                  ? MemberCardView(
+                      key: ValueKey(selectedId),
+                      memberId: selectedId,
+                    )
+                  : MemberDetailView(
                       key: ValueKey(selectedId),
                       memberId: selectedId,
                     ),
@@ -79,7 +84,6 @@ class _MemberList extends ConsumerWidget {
     final l10n = context.l10n;
     final list = ref.watch(memberListProvider);
     final due = ref.watch(membershipDueProvider);
-    final temple = ref.watch(currentTempleProvider);
     final today = ref.watch(todayProvider);
     final query = ref.watch(memberSearchProvider);
 
@@ -157,21 +161,26 @@ class _MemberList extends ConsumerWidget {
                         '${l10n.membersNoResultsHint}',
                   );
                 }
-                return ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-                  itemCount: state.visible.length,
-                  separatorBuilder: (_, _) =>
-                      Divider(height: 1, color: colors.line),
-                  itemBuilder: (context, index) {
-                    final member = state.visible[index];
-                    return _MemberRow(
-                      member: member,
-                      temple: temple,
-                      status: member.statusOn(today),
-                      selected: member.id == selectedId,
-                      onTap: () => onOpen(member),
-                    );
-                  },
+                return RefreshIndicator(
+                  color: colors.accentText,
+                  backgroundColor: colors.surface,
+                  onRefresh: ref.read(membersProvider.notifier).refresh,
+                  child: ListView.separated(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                    itemCount: state.visible.length,
+                    separatorBuilder: (_, _) =>
+                        Divider(height: 1, color: colors.line),
+                    itemBuilder: (context, index) {
+                      final member = state.visible[index];
+                      return _MemberRow(
+                        member: member,
+                        status: member.statusOn(today),
+                        selected: member.id == selectedId,
+                        onTap: () => onOpen(member),
+                      );
+                    },
+                  ),
                 );
               },
             ),
@@ -186,7 +195,7 @@ class _MemberList extends ConsumerWidget {
                   onPressed: () => context.go(AppRoutes.addMember),
                 ),
                 // With the backend on, Add a Member already opens New ID card.
-                if (ref.watch(appConfigProvider).addMemberWizard)
+                if (ref.watch(appConfigProvider).demoMembers)
                   LinkButton(
                     label: l10n.membersNewCard,
                     onPressed: () => context.go(AppRoutes.newCard),
@@ -204,14 +213,12 @@ class _MemberList extends ConsumerWidget {
 class _MemberRow extends StatelessWidget {
   const _MemberRow({
     required this.member,
-    required this.temple,
     required this.status,
     required this.selected,
     required this.onTap,
   });
 
   final Member member;
-  final Temple? temple;
   final MembershipStatus status;
   final bool selected;
   final VoidCallback onTap;
@@ -253,19 +260,17 @@ class _MemberRow extends StatelessWidget {
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          if (temple != null) ...[
-                            Text(
-                              memberNumberLabel(temple!, member.number),
-                              style: type
-                                  .sans(14, color: colors.inkMuted, height: 1.3)
-                                  .copyWith(
-                                    fontFeatures: const [
-                                      FontFeature.tabularFigures(),
-                                    ],
-                                  ),
-                            ),
-                            const SizedBox(width: 10),
-                          ],
+                          Text(
+                            member.number,
+                            style: type
+                                .sans(14, color: colors.inkMuted, height: 1.3)
+                                .copyWith(
+                                  fontFeatures: const [
+                                    FontFeature.tabularFigures(),
+                                  ],
+                                ),
+                          ),
+                          const SizedBox(width: 10),
                           Flexible(child: MembershipStatusPill(status)),
                         ],
                       ),

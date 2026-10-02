@@ -19,6 +19,7 @@ class AppTextField extends StatefulWidget {
     this.optionalTag,
     this.hint,
     this.errorText,
+    this.leading,
     this.keyboardType,
     this.textInputAction,
     this.textCapitalization = TextCapitalization.none,
@@ -39,6 +40,9 @@ class AppTextField extends StatefulWidget {
   final String? optionalTag;
   final String? hint;
   final String? errorText;
+
+  /// Sits before the input and is as tall as it: a country code, a unit.
+  final Widget? leading;
   final TextInputType? keyboardType;
   final TextInputAction? textInputAction;
   final TextCapitalization textCapitalization;
@@ -89,6 +93,8 @@ class _AppTextFieldState extends State<AppTextField> {
             borderSide: BorderSide(color: colors.error, width: 1.5),
           );
 
+    // An address is kept as typed: the keyboard must not correct it.
+    final asTyped = widget.keyboardType == TextInputType.emailAddress;
     final field = TextField(
       controller: _controller,
       onChanged: widget.onChanged,
@@ -97,6 +103,8 @@ class _AppTextFieldState extends State<AppTextField> {
           widget.keyboardType ?? (multiline ? TextInputType.multiline : null),
       textInputAction: widget.textInputAction,
       textCapitalization: widget.textCapitalization,
+      autocorrect: !asTyped,
+      enableSuggestions: !asTyped,
       autofillHints: widget.autofillHints,
       minLines: widget.minLines,
       maxLines: widget.maxLines,
@@ -144,7 +152,19 @@ class _AppTextFieldState extends State<AppTextField> {
           ),
           SizedBox(height: widget.labelMuted ? 6 : 8),
         ],
-        field,
+        if (widget.leading case final leading?)
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              spacing: 8,
+              children: [
+                leading,
+                Expanded(child: field),
+              ],
+            ),
+          )
+        else
+          field,
         if (widget.errorText != null) ...[
           const SizedBox(height: 8),
           FieldError(widget.errorText!),

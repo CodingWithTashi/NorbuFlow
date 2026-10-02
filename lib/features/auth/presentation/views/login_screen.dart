@@ -13,11 +13,31 @@ import '../../../../core/widgets/buttons.dart';
 import '../../../settings/presentation/widgets/language_toggle.dart';
 import '../view_models/login_view_model.dart';
 
-class LoginScreen extends ConsumerWidget {
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends ConsumerState<LoginScreen> {
+  final _emailField = GlobalKey();
+
+  /// Scrolls the email and the reason under it clear of the keyboard.
+  void _revealEmail() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final field = _emailField.currentContext;
+      if (field == null) return;
+      Scrollable.ensureVisible(
+        field,
+        duration: const Duration(milliseconds: 200),
+        alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtEnd,
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final colors = context.colors;
     final type = context.type;
     final l10n = context.l10n;
@@ -25,8 +45,12 @@ class LoginScreen extends ConsumerWidget {
     final viewModel = ref.read(loginViewModelProvider.notifier);
 
     Future<void> submit() async {
-      if (await viewModel.submit() && context.mounted) {
+      final sent = await viewModel.submit();
+      if (!context.mounted) return;
+      if (sent) {
         context.go(AppRoutes.checkEmail);
+      } else {
+        _revealEmail();
       }
     }
 
@@ -88,6 +112,7 @@ class LoginScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 28),
                       AppTextField(
+                        key: _emailField,
                         label: l10n.loginEmailLabel,
                         hint: l10n.commonEmailHint,
                         value: state.email,

@@ -237,11 +237,7 @@ class _TypeStep extends ConsumerWidget {
                 child: OverlineLabel(l10n.addFilledForYou),
               ),
               Divider(height: 1, color: colors.line),
-              if (temple != null)
-                fact(
-                  l10n.addMemberNumber,
-                  memberNumberLabel(temple!, preview.number),
-                ),
+              if (temple != null) fact(l10n.addMemberNumber, preview.number),
               Divider(height: 1, color: colors.line),
               fact(
                 l10n.addValidUntil,
@@ -307,7 +303,7 @@ class _PaymentStep extends ConsumerWidget {
               if (temple != null)
                 Text(
                   l10n.addSummaryMeta(
-                    memberNumberLabel(temple!, preview.number),
+                    preview.number,
                     preview.expiresOn == null
                         ? l10n.commonLifetime
                         : Formats.date(preview.expiresOn!),
@@ -349,7 +345,7 @@ class _AddedView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
-    final number = memberNumberLabel(temple, member.number);
+    final number = member.number;
 
     Future<void> send(DeliveryChannel channel) async {
       final whatsApp = channel == DeliveryChannel.whatsApp;

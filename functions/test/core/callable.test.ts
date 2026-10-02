@@ -2,7 +2,7 @@ import * as logger from 'firebase-functions/logger';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
-import { defineCallable } from '../../src/core/callable';
+import { defineCallable, definePublicCallable } from '../../src/core/callable';
 import { AppError } from '../../src/core/errors';
 import { callableRequest, session, signedIn } from '../support/requests';
 
@@ -102,9 +102,19 @@ describe('defineCallable', () => {
       await expect(failing(AppError.unauthenticated())).rejects.toMatchObject({
         code: 'unauthenticated',
       });
+      await expect(failing(AppError.permissionDenied('No.'))).rejects.toMatchObject({
+        code: 'permission-denied',
+      });
       await expect(failing(AppError.invalid({ name: 'x' }))).rejects.toMatchObject({
         code: 'invalid-argument',
         details: { fields: { name: 'x' } },
+      });
+      await expect(failing(AppError.notFound('Gone.'))).rejects.toMatchObject({
+        code: 'not-found',
+      });
+      await expect(failing(AppError.conflict('Taken.', 'numberTaken'))).rejects.toMatchObject({
+        code: 'already-exists',
+        details: { reason: 'numberTaken' },
       });
     });
 
@@ -116,6 +126,37 @@ describe('defineCallable', () => {
         message: 'Something went wrong.',
       });
       expect(logger.error).toHaveBeenCalledWith('Failed', error);
+    });
+  });
+});
+
+describe('definePublicCallable', () => {
+  const echo = definePublicCallable({
+    input: z.object({ email: z.email('emailIncomplete') }),
+    handler: async (input) => ({ asked: input.email }),
+  });
+
+  it('answers a call with no session at all', async () => {
+    await expect(echo.run(callableRequest(undefined, { email: 'a@b.co' }))).resolves.toEqual({
+      asked: 'a@b.co',
+    });
+  });
+
+  it('still checks its input and reports errors the same way', async () => {
+    await expect(echo.run(callableRequest(undefined, { email: 'a@' }))).rejects.toMatchObject({
+      code: 'invalid-argument',
+      details: { fields: { email: 'emailIncomplete' } },
+    });
+
+    const failing = definePublicCallable({
+      input: z.object({}),
+      handler: async () => {
+        throw new Error('connection string postgres://secret');
+      },
+    });
+    await expect(failing.run(callableRequest(undefined, {}))).rejects.toMatchObject({
+      code: 'internal',
+      message: 'Something went wrong.',
     });
   });
 });

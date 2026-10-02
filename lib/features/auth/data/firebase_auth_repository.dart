@@ -59,6 +59,14 @@ final class FirebaseAuthRepository implements AuthRepository {
 
   @override
   Future<void> sendSignInLink(String email) => guardFailures(() async {
+    // Asked first, so nobody waits for a link that could not let them in.
+    final response = await _backend.call(
+      'auth-checkEmail',
+      input: {'email': email},
+    );
+    if (response['invited'] != true) {
+      throw const PermissionFailure(reason: PermissionReason.notOnTeam);
+    }
     await _auth.sendSignInLinkToEmail(
       email: email,
       actionCodeSettings: _linkSettings,

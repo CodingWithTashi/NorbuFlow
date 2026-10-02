@@ -1,12 +1,23 @@
+import 'dart:convert';
+
+import 'package:cloud_functions/cloud_functions.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:norbu_flow/core/calendar/tibetan_calendar.dart';
+import 'package:norbu_flow/core/config/app_config.dart';
+import 'package:norbu_flow/core/data/backend.dart';
 import 'package:norbu_flow/core/error/app_failure.dart';
 import 'package:norbu_flow/core/error/validation_issue.dart';
 import 'package:norbu_flow/core/feedback/app_messenger.dart';
+import 'package:norbu_flow/core/models/photo_source.dart';
 import 'package:norbu_flow/core/theme/accent_preset.dart';
+import 'package:norbu_flow/features/auth/data/auth_repositories.dart';
+import 'package:norbu_flow/features/auth/data/fake_auth_repository.dart';
 import 'package:norbu_flow/features/auth/presentation/view_models/auth_view_model.dart';
 import 'package:norbu_flow/features/offerings/presentation/view_models/offering_providers.dart';
 import 'package:norbu_flow/features/offerings/presentation/view_models/puja_view_model.dart';
+import 'package:norbu_flow/features/temple/data/firebase_temple_repository.dart';
+import 'package:norbu_flow/features/temple/data/temple_repositories.dart';
 import 'package:norbu_flow/features/temple/domain/role.dart';
 import 'package:norbu_flow/features/temple/presentation/view_models/team_view_model.dart';
 import 'package:norbu_flow/features/temple/presentation/view_models/temple_session.dart';
@@ -14,9 +25,169 @@ import 'package:norbu_flow/features/volunteers/presentation/view_models/assign_v
 import 'package:norbu_flow/features/volunteers/presentation/view_models/calendar_view_model.dart';
 import 'package:norbu_flow/features/volunteers/presentation/view_models/plan_view_model.dart';
 
+import '../support/cards.dart';
+import '../support/fake_backend.dart';
 import '../support/test_app.dart';
 
 void main() {
+  group('FirebaseTempleRepository', () {
+    late FakeBackend backend;
+    late FirebaseTempleRepository repository;
+
+    setUp(() {
+      backend = FakeBackend({
+        'temples': <Object?>[
+          <Object?, Object?>{
+            'id': 'drolma-ling-centre',
+            'name': 'Drolma Ling Centre',
+            'description': 'Kagyu tradition · Vancouver',
+            'role': 'admin',
+            'logo': base64Encode(frontPage),
+          },
+          <Object?, Object?>{
+            'id': 'drepung-loseling-canada',
+            'name': 'Drepung Loseling Canada',
+            'description': '',
+            'role': 'frontDesk',
+            'logo': null,
+          },
+        ],
+      });
+      repository = FirebaseTempleRepository(backend);
+    });
+
+    test('lists the temples the backend assigned to whoever is signed in, '
+        'with their role at each', () async {
+      final memberships = await repository.fetchMemberships('uid-lama');
+
+      // The backend knows who is calling: nothing is sent.
+      expect(backend.calls, ['temples-list']);
+      expect(backend.inputs.single, isNull);
+      expect(memberships.map((membership) => membership.role), [
+        Role.admin,
+        Role.frontDesk,
+      ]);
+      final temple = memberships.first.temple;
+      expect(temple.id, 'drolma-ling-centre');
+      expect(temple.nameEn, 'Drolma Ling Centre');
+      expect(temple.tradition, 'Kagyu tradition · Vancouver');
+      expect(temple.monogram, 'DL');
+      expect((temple.logo! as MemoryPhoto).bytes, frontPage);
+      expect(memberships.last.temple.logo, isNull);
+    });
+
+    test('says so when no temple was assigned to them', () async {
+      backend.error = FirebaseFunctionsException(
+        code: 'permission-denied',
+        message: 'On no team.',
+        details: {'reason': 'notOnTeam'},
+      );
+
+      await expectLater(
+        repository.fetchMemberships('uid-stranger'),
+        throwsA(
+          isA<PermissionFailure>().having(
+            (failure) => failure.reason,
+            'reason',
+            PermissionReason.notOnTeam,
+          ),
+        ),
+      );
+    });
+
+    test('does not save temple settings yet, and says so rather than '
+        'pretending', () async {
+      final temple = (await repository.fetchMemberships('uid')).first.temple;
+
+      await expectLater(
+        repository.updateTemple(temple.copyWith(nameEn: 'Renamed')),
+        throwsA(isA<UnavailableFailure>()),
+      );
+      expect(backend.calls, ['temples-list']);
+    });
+
+    test('is what the app uses once the backend is on', () async {
+      final container = createContainer(
+        config: const AppConfig(useFirebase: true, fakeLatency: Duration.zero),
+        overrides: [
+          backendProvider.overrideWithValue(backend),
+          authRepositoryProvider.overrideWithValue(
+            FakeAuthRepository(Duration.zero),
+          ),
+        ],
+      );
+      final auth = container.read(authViewModelProvider.notifier);
+      await auth.sendSignInLink('lama.karma@drolmaling.ca');
+      await auth.completeSignIn('the link');
+
+      expect(
+        container.read(templeRepositoryProvider),
+        isA<FirebaseTempleRepository>(),
+      );
+      final temples = await container.read(templesProvider.future);
+      expect(temples.map((membership) => membership.temple.nameEn), [
+        'Drolma Ling Centre',
+        'Drepung Loseling Canada',
+      ]);
+      // A temple the demo knows nothing of still has a team screen.
+      container
+          .read(currentTempleIdProvider.notifier)
+          .select('drolma-ling-centre');
+      expect(await container.read(teamProvider.future), isEmpty);
+    });
+  });
+
+  group('choosing a temple', () {
+    setUpAll(loadAppFonts);
+
+    testWidgets('offers "Add a temple" locked: it only says who adds them', (
+      tester,
+    ) async {
+      tester.setScreenSize(const Size(390, 844));
+      final container = createContainer();
+      await tester.pumpApp(container);
+      final auth = container.read(authViewModelProvider.notifier);
+      await tester.runAsync(() async {
+        await auth.sendSignInLink('dolma@jangchub.org');
+        await auth.completeSignIn('the link');
+      });
+      await tester.pumpAndSettle();
+
+      expect(find.text('Choose your temple'), findsOneWidget);
+      expect(find.text('Add a temple'), findsOneWidget);
+      expect(find.text('Locked'), findsOneWidget);
+
+      await tester.ensureVisible(find.text('Add a temple'));
+      await tester.tap(find.text('Add a temple'));
+      await tester.pumpAndSettle();
+
+      // Still choosing: nothing was added and nowhere else was opened.
+      expect(find.text('Choose your temple'), findsOneWidget);
+      expect(
+        container.read(appMessengerProvider)?.text,
+        'Temples are added by NorbuFlow. Contact us to add another.',
+      );
+      expect(container.read(currentTempleIdProvider), isNull);
+      container.read(appMessengerProvider.notifier).dismiss();
+      await tester.pump();
+    });
+
+    testWidgets('offers it in the temple switcher too', (tester) async {
+      tester.setScreenSize(const Size(390, 844));
+      final container = createContainer();
+      await tester.pumpApp(container);
+      await tester.runAsync(() => signIn(container));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Jangchub Choling'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Which temple?'), findsOneWidget);
+      expect(find.text('Add a temple'), findsOneWidget);
+      expect(find.text('Locked'), findsOneWidget);
+    });
+  });
+
   group('session', () {
     test('role and accent follow the chosen temple', () async {
       final container = await createSignedInContainer();

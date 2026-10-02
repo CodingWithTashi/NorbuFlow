@@ -1,11 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/error/command.dart';
 import '../../../../core/error/result.dart';
+import '../../../../core/services/file_cache.dart';
 import '../../../../core/utils/clock.dart';
 import '../../../temple/presentation/view_models/temple_session.dart';
 import '../../data/member_repositories.dart';
+import '../../domain/card.dart';
 import '../../domain/member.dart';
 
 /// The current temple's members. Every screen that shows or changes a member
@@ -34,6 +38,47 @@ class MembersViewModel extends AsyncNotifier<List<Member>> {
       state = AsyncData([value, ..._members]);
     }
     return result;
+  }
+
+  /// Fetches the list again: another desk may have added or changed someone.
+  /// If that fails, what is shown stays and the failure is a toast.
+  Future<void> refresh() async {
+    final result = await runCommand(
+      ref,
+      () => _repository.fetchMembers(_templeId),
+      source: 'members.refresh',
+    );
+    if (result case Ok(:final value) when ref.mounted) _show(value);
+  }
+
+  /// Takes in a member saved elsewhere (a card issued, details changed): in
+  /// place of the one with their id, or at the top as the newest.
+  void put(Member member) {
+    // Not loaded yet: the list will include them when it is.
+    if (!state.hasValue) {
+      ref.invalidateSelf();
+      return;
+    }
+    final known = _members.any((existing) => existing.id == member.id);
+    _show([
+      if (!known) member,
+      for (final existing in _members)
+        existing.id == member.id ? member : existing,
+    ]);
+  }
+
+  /// Shows [members], and drops from the device the cards nobody holds now.
+  void _show(List<Member> members) {
+    final held = {for (final member in members) member.cardId};
+    final cache = ref.read(fileCacheProvider);
+    for (final member in _members) {
+      final old = member.cardId;
+      if (old == null || held.contains(old)) continue;
+      for (final file in CardFiles.all(old)) {
+        unawaited(cache.remove(file));
+      }
+    }
+    state = AsyncData(members);
   }
 
   Future<Result<Member>> renew(String memberId) async {

@@ -3,9 +3,14 @@ import 'dart:async';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:norbu_flow/app/router/app_router.dart';
+import 'package:norbu_flow/app/router/app_routes.dart';
 import 'package:norbu_flow/core/error/app_failure.dart';
+import 'package:norbu_flow/core/error/validation_issue.dart';
+import 'package:norbu_flow/core/widgets/buttons.dart';
 import 'package:norbu_flow/core/feedback/app_messenger.dart';
 import 'package:norbu_flow/features/auth/data/auth_local_store.dart';
 import 'package:norbu_flow/features/auth/data/auth_repositories.dart';
@@ -13,6 +18,7 @@ import 'package:norbu_flow/features/auth/data/fake_auth_repository.dart';
 import 'package:norbu_flow/features/auth/data/firebase_auth_repository.dart';
 import 'package:norbu_flow/features/auth/domain/auth_repository.dart';
 import 'package:norbu_flow/features/auth/presentation/view_models/auth_view_model.dart';
+import 'package:norbu_flow/features/auth/presentation/view_models/login_view_model.dart';
 import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
 import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
 
@@ -173,6 +179,136 @@ void main() {
     });
   });
 
+  group('the sign-in screen', () {
+    late _DrivenAuthRepository repository;
+    late ProviderContainer container;
+
+    LoginState state() => container.read(loginViewModelProvider);
+    LoginViewModel login() => container.read(loginViewModelProvider.notifier);
+    AppFailure? shownFailure() => container.read(appMessengerProvider)?.failure;
+
+    setUp(() {
+      repository = _DrivenAuthRepository();
+      container = createContainer(
+        overrides: [authRepositoryProvider.overrideWithValue(repository)],
+      );
+      final subscription = container.listen(loginViewModelProvider, (_, _) {});
+      addTearDown(subscription.close);
+      addTearDown(container.read(appMessengerProvider.notifier).dismiss);
+    });
+
+    test('says beside the field that an address was never added, and waits '
+        'for no email', () async {
+      repository.sendFailure = const PermissionFailure(
+        reason: PermissionReason.notOnTeam,
+      );
+      login().setEmail('stranger@example.org');
+
+      expect(await login().submit(), isFalse);
+
+      expect(state().issue, ValidationIssue.emailNotInvited);
+      expect(state().submitting, isFalse);
+      // Said once, where the address was typed: not in a toast as well.
+      expect(shownFailure(), isNull);
+      expect(container.read(authViewModelProvider).pendingEmail, isNull);
+
+      // Typing another address clears the message.
+      login().setEmail('dolma@jangchub.org');
+      expect(state().issue, isNull);
+    });
+
+    test('sends the link to an address that was added', () async {
+      login().setEmail(' dolma@jangchub.org ');
+
+      expect(await login().submit(), isTrue);
+
+      expect(state().issue, isNull);
+      expect(
+        container.read(authViewModelProvider).pendingEmail,
+        'dolma@jangchub.org',
+      );
+    });
+
+    test('shows any other failure as a toast, and leaves the field '
+        'alone', () async {
+      repository.sendFailure = const NetworkFailure();
+      login().setEmail('dolma@jangchub.org');
+
+      expect(await login().submit(), isFalse);
+
+      expect(shownFailure(), isA<NetworkFailure>());
+      expect(state().issue, isNull);
+      expect(state().submitting, isFalse);
+    });
+
+    testWidgets('shows the message under the email, and stays put', (
+      tester,
+    ) async {
+      await loadAppFonts();
+      tester.setScreenSize(const Size(390, 844));
+      repository.sendFailure = const PermissionFailure(
+        reason: PermissionReason.notOnTeam,
+      );
+      await tester.pumpApp(container);
+      container.read(routerProvider).go(AppRoutes.login);
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), 'stranger@example.org');
+      await tester.tap(find.text('Email me a sign-in link'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text(
+          'This email has not been added to a temple yet. Please ask your '
+          'temple or NorbuFlow to add it.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Sign in to your temple'), findsOneWidget);
+      expect(find.text('Check your email'), findsNothing);
+    });
+
+    testWidgets('lets the keyboard neither correct nor capitalise the '
+        'address', (tester) async {
+      await loadAppFonts();
+      tester.setScreenSize(const Size(390, 844));
+      await tester.pumpApp(container);
+      container.read(routerProvider).go(AppRoutes.login);
+      await tester.pumpAndSettle();
+
+      final field = tester.widget<TextField>(find.byType(TextField));
+      expect(field.keyboardType, TextInputType.emailAddress);
+      expect(field.autocorrect, isFalse);
+      expect(field.enableSuggestions, isFalse);
+      expect(field.textCapitalization, TextCapitalization.none);
+    });
+
+    testWidgets('keeps the whole message above the keyboard', (tester) async {
+      await loadAppFonts();
+      tester.setScreenSize(const Size(360, 640));
+      // The keyboard, as it covers the lower part of a small phone.
+      tester.view.viewInsets = const FakeViewPadding(bottom: 280);
+      addTearDown(tester.view.resetViewInsets);
+      repository.sendFailure = const PermissionFailure(
+        reason: PermissionReason.notOnTeam,
+      );
+      await tester.pumpApp(container);
+      container.read(routerProvider).go(AppRoutes.login);
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), 'stranger@example.org');
+      await tester.tap(find.text('Email me a sign-in link'));
+      await tester.pumpAndSettle();
+
+      final message = tester.getRect(
+        find.textContaining('has not been added to a temple'),
+      );
+      final button = tester.getRect(find.byType(PrimaryButton));
+      expect(message.bottom, lessThanOrEqualTo(button.top));
+      expect(message.top, greaterThanOrEqualTo(0));
+    });
+  });
+
   group('FirebaseAuthRepository', () {
     late _FakeFirebaseAuth firebase;
     late FakeBackend backend;
@@ -185,13 +321,18 @@ void main() {
       SharedPreferencesAsyncPlatform.instance =
           InMemorySharedPreferencesAsync.empty();
       firebase = _FakeFirebaseAuth();
-      backend = FakeBackend({
-        'user': <Object?, Object?>{
-          'id': 'uid-dolma',
-          'email': _email,
-          'displayName': 'Dolma Tsering',
+      backend = FakeBackend(
+        {
+          'user': <Object?, Object?>{
+            'id': 'uid-dolma',
+            'email': _email,
+            'displayName': 'Dolma Tsering',
+          },
         },
-      });
+        answers: {
+          'auth-checkEmail': {'invited': true},
+        },
+      );
       store = AuthLocalStore();
       incoming = StreamController<String>.broadcast();
       addTearDown(incoming.close);
@@ -221,6 +362,47 @@ void main() {
       expect((await repository.restore()).pendingEmail, _email);
     });
 
+    test('asks the backend whether the address was added before any link '
+        'is sent', () async {
+      await repository.sendSignInLink(_email);
+
+      expect(backend.calls, ['auth-checkEmail']);
+      expect(backend.inputs.single, {'email': _email});
+      expect(firebase.sent.keys, [_email]);
+    });
+
+    test('an address no temple has added gets no link, and is not '
+        'remembered', () async {
+      backend.answers['auth-checkEmail'] = {'invited': false};
+
+      await expectLater(
+        repository.sendSignInLink('stranger@example.org'),
+        throwsA(
+          isA<PermissionFailure>().having(
+            (failure) => failure.reason,
+            'reason',
+            PermissionReason.notOnTeam,
+          ),
+        ),
+      );
+      expect(firebase.sent, isEmpty);
+      expect(await store.pendingEmail(), isNull);
+    });
+
+    test('with no connection to ask over, nothing is sent either', () async {
+      backend.error = FirebaseFunctionsException(
+        code: 'unavailable',
+        message: 'UNAVAILABLE',
+      );
+
+      await expectLater(
+        repository.sendSignInLink(_email),
+        throwsA(isA<NetworkFailure>()),
+      );
+      expect(firebase.sent, isEmpty);
+      expect(await store.pendingEmail(), isNull);
+    });
+
     test('an address Firebase refuses is not remembered', () async {
       firebase.sendError = FirebaseAuthException(code: 'too-many-requests');
 
@@ -238,7 +420,7 @@ void main() {
       final user = await repository.completeSignIn(_link);
 
       expect(firebase.exchanged, [(_email, _link)]);
-      expect(backend.calls, ['auth-startSession']);
+      expect(backend.calls, ['auth-checkEmail', 'auth-startSession']);
       expect(user.id, 'uid-dolma');
       expect(user.displayName, 'Dolma Tsering');
 
@@ -246,8 +428,8 @@ void main() {
       expect(restored.user?.id, 'uid-dolma');
       expect(restored.user?.displayName, 'Dolma Tsering');
       expect(await store.pendingEmail(), isNull);
-      // Restoring is local: no second trip to the backend.
-      expect(backend.calls, hasLength(1));
+      // Restoring is local: no further trip to the backend.
+      expect(backend.calls, hasLength(2));
     });
 
     test('a link opened on a device that did not ask for it is refused '
@@ -285,7 +467,8 @@ void main() {
             ),
           ),
         );
-        expect(backend.calls, isEmpty);
+        // The session was never started.
+        expect(backend.calls, ['auth-checkEmail']);
       });
     }
 
@@ -451,6 +634,9 @@ class _DrivenAuthRepository implements AuthRepository {
   final completed = <String>[];
   AppFailure? failWith;
 
+  /// What asking for a link fails with, if it is to fail.
+  AppFailure? sendFailure;
+
   /// When set, the call waits for it: a slow check, a slow send.
   Completer<void>? checking;
   Completer<void>? sending;
@@ -473,6 +659,7 @@ class _DrivenAuthRepository implements AuthRepository {
 
   @override
   Future<void> sendSignInLink(String email) async {
+    if (sendFailure case final failure?) throw failure;
     await _fake.sendSignInLink(email);
     await sending?.future;
   }

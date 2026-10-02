@@ -1,9 +1,10 @@
-/** What went wrong, in the backend's own terms. `callable.ts` turns it into a response. */
-export type ErrorKind = 'unauthenticated' | 'permissionDenied' | 'invalid';
+/** What went wrong, in the backend's own terms: not yet a response of any kind. */
+export type ErrorKind =
+  'unauthenticated' | 'permissionDenied' | 'invalid' | 'notFound' | 'conflict';
 
 /**
- * What the app is told beyond the kind. `reason` and the values of `fields`
- * are names of the app's Dart enums, read by its `FailureMapper`.
+ * What is told beyond the kind. To the app, `reason` and the values of
+ * `fields` are names of its Dart enums; to the operator, plain words.
  */
 export interface ErrorDetails {
   reason?: string;
@@ -35,5 +36,13 @@ export class AppError extends Error {
 
   static invalid(fields: Record<string, string>): AppError {
     return new AppError('invalid', 'The request was not valid.', { fields });
+  }
+
+  static notFound(message: string): AppError {
+    return new AppError('notFound', message);
+  }
+
+  static conflict(message: string, reason?: string): AppError {
+    return new AppError('conflict', message, { reason });
   }
 }

@@ -282,7 +282,10 @@ class _PosterPreview extends StatelessWidget {
                   ),
                   const SizedBox(height: 18),
                   Text(
-                    '${temple.nameEn} · ${temple.url}',
+                    [
+                      temple.nameEn,
+                      if (temple.url.isNotEmpty) temple.url,
+                    ].join(' · '),
                     textAlign: TextAlign.center,
                     style: type.sans(14, color: AppPalette.parchment),
                   ),

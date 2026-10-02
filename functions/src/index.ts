@@ -10,3 +10,4 @@ setGlobalOptions(globalOptions);
 // also the name the app calls it by.
 export * as auth from './features/auth';
 export * as members from './features/members';
+export * as temples from './features/temples';

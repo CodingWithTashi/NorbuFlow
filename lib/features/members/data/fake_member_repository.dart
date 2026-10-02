@@ -15,7 +15,7 @@ final class FakeMemberRepository extends FakeRepository
           1,
           'Tenzin Dolkar',
           'བསྟན་འཛིན་སྒྲོལ་དཀར།',
-          142,
+          'JC-0142',
           '416 555 0142',
           MembershipType.family,
           165,
@@ -24,7 +24,7 @@ final class FakeMemberRepository extends FakeRepository
           2,
           'Sonam Wangchuk',
           'བསོད་ནམས་དབང་ཕྱུག',
-          87,
+          'JC-0087',
           '647 555 0187',
           MembershipType.individual,
           12,
@@ -33,7 +33,7 @@ final class FakeMemberRepository extends FakeRepository
           3,
           'Margaret Chen',
           '',
-          203,
+          'JC-0203',
           '416 555 0203',
           MembershipType.seniorStudent,
           94,
@@ -42,7 +42,7 @@ final class FakeMemberRepository extends FakeRepository
           4,
           'Pema Lhamo',
           'པདྨ་ལྷ་མོ།',
-          31,
+          'JC-0031',
           '905 555 0031',
           MembershipType.individual,
           -31,
@@ -51,7 +51,7 @@ final class FakeMemberRepository extends FakeRepository
           5,
           'Karma Tsering',
           'ཀར་མ་ཚེ་རིང་།',
-          115,
+          'JC-0115',
           '416 555 0115',
           MembershipType.family,
           264,
@@ -60,7 +60,7 @@ final class FakeMemberRepository extends FakeRepository
           6,
           'David Morrison',
           '',
-          198,
+          'JC-0198',
           '647 555 0198',
           MembershipType.individual,
           28,
@@ -69,7 +69,7 @@ final class FakeMemberRepository extends FakeRepository
           7,
           'Dawa Dolma',
           'ཟླ་བ་སྒྲོལ་མ།',
-          64,
+          'JC-0064',
           '416 555 0064',
           MembershipType.family,
           132,
@@ -78,7 +78,7 @@ final class FakeMemberRepository extends FakeRepository
           8,
           'Lobsang Gyatso',
           'བློ་བཟང་རྒྱ་མཚོ།',
-          12,
+          'JC-0012',
           '905 555 0012',
           MembershipType.life,
           null,
@@ -89,7 +89,7 @@ final class FakeMemberRepository extends FakeRepository
           21,
           'Yeshi Lhamo',
           'ཡེ་ཤེས་ལྷ་མོ།',
-          58,
+          'DL-0058',
           '604 555 0158',
           MembershipType.family,
           201,
@@ -98,7 +98,7 @@ final class FakeMemberRepository extends FakeRepository
           22,
           'Ngawang Choedon',
           'ངག་དབང་ཆོས་སྒྲོན།',
-          44,
+          'DL-0044',
           '778 555 0144',
           MembershipType.individual,
           19,
@@ -107,7 +107,7 @@ final class FakeMemberRepository extends FakeRepository
           23,
           'Robert Chen',
           '',
-          71,
+          'DL-0071',
           '604 555 0171',
           MembershipType.seniorStudent,
           88,
@@ -116,7 +116,7 @@ final class FakeMemberRepository extends FakeRepository
           24,
           'Chime Dolma',
           'འཆི་མེད་སྒྲོལ་མ།',
-          9,
+          'DL-0009',
           '604 555 0109',
           MembershipType.life,
           null,
@@ -125,7 +125,7 @@ final class FakeMemberRepository extends FakeRepository
           25,
           'Kelsang Pema',
           'བསྐལ་བཟང་པདྨ།',
-          63,
+          'DL-0063',
           '778 555 0163',
           MembershipType.individual,
           -12,
@@ -138,13 +138,16 @@ final class FakeMemberRepository extends FakeRepository
   late final Map<String, List<Member>> _members;
   int _nextId = 100;
 
+  /// What a temple with no members yet numbers its first.
+  static const firstNumber = '0001';
+
   DateTime get _today => _clock().dateOnly;
 
   Member _seed(
     int id,
     String nameEn,
     String nameBo,
-    int number,
+    String number,
     String phone,
     MembershipType type,
     int? expiresInDays,
@@ -169,6 +172,20 @@ final class FakeMemberRepository extends FakeRepository
     return index;
   }
 
+  /// The temple's members as they stand, for the fake that issues cards.
+  List<Member> membersOf(String templeId) => List.unmodifiable(_of(templeId));
+
+  /// Files [member]: in place of the one with their id, or as the newest.
+  void save(String templeId, Member member) {
+    final members = _of(templeId);
+    final index = members.indexWhere((m) => m.id == member.id);
+    if (index < 0) {
+      members.insert(0, member);
+    } else {
+      members[index] = member;
+    }
+  }
+
   @override
   Future<List<Member>> fetchMembers(String templeId) =>
       respond(() => List.unmodifiable(_of(templeId)));
@@ -176,15 +193,14 @@ final class FakeMemberRepository extends FakeRepository
   @override
   Future<Member> addMember(String templeId, NewMember newMember) => respond(() {
     final members = _of(templeId);
-    final highest = members.fold(
-      0,
-      (max, m) => m.number > max ? m.number : max,
-    );
     final member = Member(
       id: 'm${_nextId++}',
       nameEn: newMember.nameEn.trim(),
       nameBo: newMember.nameBo.trim(),
-      number: highest + 1,
+      number: Member.numberAfter(
+        members.map((member) => member.number),
+        whenNone: firstNumber,
+      ),
       phone: newMember.phone.trim(),
       email: newMember.email.trim(),
       type: newMember.type,

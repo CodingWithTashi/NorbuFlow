@@ -3,12 +3,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:norbu_flow/app/router/app_router.dart';
 import 'package:norbu_flow/app/router/app_routes.dart';
+import 'package:norbu_flow/core/config/app_config.dart';
 import 'package:norbu_flow/core/feedback/app_messenger.dart';
+import 'package:norbu_flow/core/services/document_printer.dart';
+import 'package:norbu_flow/features/members/presentation/view_models/members_view_model.dart';
+import 'package:norbu_flow/features/members/presentation/views/member_detail_view.dart';
 import 'package:norbu_flow/features/settings/domain/app_preferences.dart';
 import 'package:norbu_flow/features/settings/presentation/view_models/preferences_view_model.dart';
 import 'package:norbu_flow/features/temple/domain/role.dart';
 import 'package:norbu_flow/features/temple/presentation/view_models/temple_session.dart';
 
+import 'support/cards.dart';
 import 'support/test_app.dart';
 
 const _phone = Size(390, 844);
@@ -31,6 +36,7 @@ const _locations = [
   AppRoutes.newCard,
   '/members/m1',
   '/members/m4',
+  '/members/m1/edit',
   AppRoutes.offerings,
   '/offerings/donation/other',
   AppRoutes.puja,
@@ -42,6 +48,16 @@ const _locations = [
   AppRoutes.more,
   AppRoutes.team,
   AppRoutes.templeSettings,
+];
+
+/// The members screens that differ once the backend is on: the member list,
+/// New ID card, a member's own card, and Edit.
+const _liveMemberLocations = [
+  AppRoutes.members,
+  AppRoutes.newCard,
+  '/members/m1',
+  '/members/m4',
+  '/members/m1/edit',
 ];
 
 void main() {
@@ -153,6 +169,25 @@ void main() {
     expect(find.text('+ Add a Member'), findsOneWidget);
   });
 
+  testWidgets('with the backend on, a tablet shows the member and their own '
+      'card beside the list', (tester) async {
+    tester.setScreenSize(_tabletLandscape);
+    final container = await _signedInApp(tester, liveMembers: true);
+    container.read(routerProvider).go(AppRoutes.members);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Sonam Wangchuk'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(MemberDetailView), findsOneWidget);
+    expect(find.text('ID JC-0087'), findsOneWidget);
+    expect(find.bySemanticsLabel('Front'), findsOneWidget);
+    // Renewing is not on the backend yet, so it is not offered.
+    expect(find.text('Renew 1 year'), findsNothing);
+    // Still on the list: the member opened in the second pane.
+    expect(find.text('+ Add a Member'), findsOneWidget);
+  });
+
   testWidgets('renewing from the ID card confirms with the new date', (
     tester,
   ) async {
@@ -196,6 +231,34 @@ void main() {
     });
   }
 
+  for (final (name, size) in [
+    ('phone', _phone),
+    ('tablet portrait', _tabletPortrait),
+    ('tablet landscape', _tabletLandscape),
+  ]) {
+    testWidgets('the backend\'s member screens lay out on a $name', (
+      tester,
+    ) async {
+      tester.setScreenSize(size);
+      final container = await _signedInApp(tester, liveMembers: true);
+      await _visitEverything(tester, container, _liveMemberLocations);
+    });
+  }
+
+  testWidgets('the backend\'s member screens lay out in dark mode, and in '
+      'Tibetan with Simple Mode', (tester) async {
+    tester.setScreenSize(_phone);
+    final container = await _signedInApp(tester, liveMembers: true);
+    container.read(preferencesProvider.notifier).setDarkMode(true);
+    await _visitEverything(tester, container, _liveMemberLocations);
+
+    container.read(preferencesProvider.notifier)
+      ..setLanguage(AppLanguage.tibetan)
+      ..setSimpleMode(true);
+    await tester.pumpAndSettle();
+    await _visitEverything(tester, container, _liveMemberLocations);
+  });
+
   testWidgets('every screen lays out in dark mode', (tester) async {
     tester.setScreenSize(_phone);
     final container = await _signedInApp(tester);
@@ -218,10 +281,29 @@ void main() {
   });
 }
 
-Future<ProviderContainer> _signedInApp(WidgetTester tester) async {
-  final container = createContainer();
+/// The app, signed in. With [liveMembers], the members screens are the ones
+/// the backend has, on the fakes, and cards are drawn without a device.
+Future<ProviderContainer> _signedInApp(
+  WidgetTester tester, {
+  bool liveMembers = false,
+}) async {
+  final container = liveMembers
+      ? createContainer(
+          config: const AppConfig(
+            demoMembers: false,
+            fakeLatency: Duration.zero,
+          ),
+          overrides: [
+            documentPrinterProvider.overrideWithValue(RecordingPrinter()),
+          ],
+        )
+      : createContainer();
   await tester.pumpApp(container);
-  await tester.runAsync(() => signIn(container));
+  await tester.runAsync(() async {
+    await signIn(container);
+    // The live screens show a spinner until the member list has arrived.
+    if (liveMembers) await container.read(membersProvider.future);
+  });
   await tester.pumpAndSettle();
   expect(find.textContaining('Dolma'), findsWidgets);
   return container;
@@ -229,12 +311,13 @@ Future<ProviderContainer> _signedInApp(WidgetTester tester) async {
 
 Future<void> _visitEverything(
   WidgetTester tester,
-  ProviderContainer container,
-) async {
+  ProviderContainer container, [
+  List<String> locations = _locations,
+]) async {
   final router = container.read(routerProvider);
   // Collected rather than failing fast, so one run lists every bad screen.
   final problems = <String>[];
-  for (final location in _locations) {
+  for (final location in locations) {
     router.go(location);
     await tester.pumpAndSettle();
     final exception = tester.takeException();

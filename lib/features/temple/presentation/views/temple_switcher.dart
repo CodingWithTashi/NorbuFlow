@@ -13,6 +13,7 @@ import '../../../../core/widgets/decor.dart';
 import '../../../../core/widgets/selection.dart';
 import '../../domain/temple.dart';
 import '../view_models/temple_session.dart';
+import '../widgets/add_temple_locked.dart';
 
 /// Lets the person pick another temple, confirms the switch, then moves
 /// them to that temple's Home.
@@ -84,14 +85,15 @@ class _TempleChoices extends ConsumerWidget {
                           height: 1.3,
                         ),
                       ),
-                      Text(
-                        membership.temple.url,
-                        style: type.sans(
-                          14,
-                          color: colors.inkMuted,
-                          height: 1.4,
+                      if (_caption(membership.temple) case final caption?)
+                        Text(
+                          caption,
+                          style: type.sans(
+                            14,
+                            color: colors.inkMuted,
+                            height: 1.4,
+                          ),
                         ),
-                      ),
                     ],
                   ),
                 ),
@@ -112,7 +114,15 @@ class _TempleChoices extends ConsumerWidget {
             ),
           ),
         ],
+        const SizedBox(height: 14),
+        const AddTempleLocked(radius: 16),
       ],
     );
+  }
+
+  /// The temple's web address, or failing that what it says about itself.
+  static String? _caption(Temple temple) {
+    if (temple.url.isNotEmpty) return temple.url;
+    return temple.tradition.isEmpty ? null : temple.tradition;
   }
 }

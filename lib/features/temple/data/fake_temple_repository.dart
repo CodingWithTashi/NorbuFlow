@@ -146,8 +146,9 @@ final class FakeTeamRepository extends FakeRepository
   };
   int _nextId = 1;
 
+  // A temple the demo has no team for (a real one) starts with nobody.
   List<TeamMember> _team(String templeId) =>
-      _teams[templeId] ?? (throw const NotFoundFailure());
+      _teams.putIfAbsent(templeId, () => []);
 
   @override
   Future<List<TeamMember>> fetchTeam(String templeId) =>

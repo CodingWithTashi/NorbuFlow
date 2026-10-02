@@ -43,6 +43,7 @@ String validationText(AppLocalizations l10n, ValidationIssue issue) {
     ValidationIssue.ownEmailRequired => l10n.validationOwnEmailRequired,
     ValidationIssue.theirEmailRequired => l10n.validationTheirEmailRequired,
     ValidationIssue.emailIncomplete => l10n.validationEmailIncomplete,
+    ValidationIssue.emailNotInvited => l10n.validationEmailNotInvited,
     ValidationIssue.memberNameRequired => l10n.validationMemberNameRequired,
     ValidationIssue.memberNameTooLong => l10n.validationMemberNameTooLong,
     ValidationIssue.memberNameUnsupported =>
@@ -50,6 +51,8 @@ String validationText(AppLocalizations l10n, ValidationIssue issue) {
     ValidationIssue.photoRequired => l10n.validationPhotoRequired,
     ValidationIssue.photoUnreadable => l10n.validationPhotoUnreadable,
     ValidationIssue.phoneTooShort => l10n.validationPhoneShort,
+    ValidationIssue.phoneTooLong => l10n.validationPhoneLong,
+    ValidationIssue.memberNumberInvalid => l10n.validationMemberNumberInvalid,
     ValidationIssue.donorRequired => l10n.validationDonorRequired,
     ValidationIssue.purposeRequired => l10n.validationPurposeRequired,
     ValidationIssue.contactIncomplete => l10n.validationContactIncomplete,

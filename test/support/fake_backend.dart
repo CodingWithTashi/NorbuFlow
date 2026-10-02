@@ -1,12 +1,16 @@
 import 'package:norbu_flow/core/data/backend.dart';
 
-/// Stands in for the Cloud Functions: answers every call with [response],
-/// or fails with [error], and records what it was asked.
+/// Stands in for the Cloud Functions: answers with [response], or [answers]
+/// for that function, or fails with [error]. Records what it was asked.
 class FakeBackend implements Backend {
-  FakeBackend(this.response);
+  FakeBackend(this.response, {Map<String, Map<String, Object?>>? answers})
+    : answers = answers ?? {};
 
   /// As the platform channel delivers it: nested objects are untyped maps.
   Map<String, Object?> response;
+
+  /// By function name, for a test that calls more than one.
+  final Map<String, Map<String, Object?>> answers;
   Object? error;
 
   final calls = <String>[];
@@ -23,6 +27,6 @@ class FakeBackend implements Backend {
     inputs.add(input);
     timeouts.add(timeout);
     if (error case final error?) throw error;
-    return response;
+    return answers[function] ?? response;
   }
 }

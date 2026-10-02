@@ -3,6 +3,7 @@
 import { openPostgres } from '../core/database';
 import { setting } from '../core/environment';
 import { migrate } from '../core/migrations';
+import { PostgresTempleRepository } from '../features/temples/postgres-temple.repository';
 import { type Role, roles } from '../features/temples/temple';
 
 async function main(): Promise<void> {
@@ -17,11 +18,8 @@ async function main(): Promise<void> {
       if (!templeId || !email || !roles.includes(role as Role)) {
         throw new Error(`Usage: db:staff -- <temple-id> <email> <${roles.join('|')}>`);
       }
-      await database.query(
-        `insert into temple_staff (temple_id, email, role) values ($1, $2, $3)
-         on conflict (temple_id, email) do update set role = excluded.role`,
-        [templeId, email.trim().toLowerCase(), role],
-      );
+      const temples = new PostgresTempleRepository(database);
+      await temples.addStaff(templeId, email.trim().toLowerCase(), role as Role);
       console.log(`${email} is now ${role} at ${templeId}.`);
     } else {
       throw new Error('Commands: migrate, staff');

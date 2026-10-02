@@ -39,14 +39,38 @@ export function defineCallable<O, S extends z.ZodType = z.ZodVoid>(
   });
 }
 
+interface PublicCallableSpec<S extends z.ZodType, O> {
+  options?: CallableOptions;
+  input: S;
+  handler: (input: z.output<S>) => Promise<O>;
+}
+
+/**
+ * Declares a function the app calls before anyone is signed in. It has no
+ * caller to trust, so it must give away nothing a stranger should not learn.
+ */
+export function definePublicCallable<O, S extends z.ZodType>(
+  spec: PublicCallableSpec<S, O>,
+): CallableFunction<unknown, Promise<O>> {
+  return onCall<unknown, Promise<O>>(spec.options ?? {}, async (request) => {
+    try {
+      return await spec.handler(parseInput(spec.input, request.data) as z.output<S>);
+    } catch (error) {
+      throw toHttpsError(error);
+    }
+  });
+}
+
 const codes: Record<ErrorKind, FunctionsErrorCode> = {
   unauthenticated: 'unauthenticated',
   permissionDenied: 'permission-denied',
   invalid: 'invalid-argument',
+  notFound: 'not-found',
+  conflict: 'already-exists',
 };
 
 /**
- * The single place an error becomes a response. Unexpected errors are logged
+ * Where an error becomes a callable's response. Unexpected errors are logged
  * in full and sent without their detail, so nothing internal leaks.
  */
 function toHttpsError(error: unknown): HttpsError {

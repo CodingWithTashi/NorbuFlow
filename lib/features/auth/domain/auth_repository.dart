@@ -32,8 +32,8 @@ abstract interface class AuthRepository {
   /// The session saved on this device.
   Future<AuthSession> restore();
 
-  /// Emails a sign-in link to [email] and remembers the address, so the link
-  /// can be completed even if the app is closed in between.
+  /// Emails a sign-in link to [email] and remembers the address for when it
+  /// is opened. `PermissionFailure(notOnTeam)` if no temple added the address.
   Future<void> sendSignInLink(String email);
 
   /// Sign-in links opened on this device, including one that launched it.

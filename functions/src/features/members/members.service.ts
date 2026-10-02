@@ -1,33 +1,69 @@
-import { randomUUID } from 'node:crypto';
-
 import { type CalendarDate, compareDates, dateInMonth, todayIn } from '../../core/calendar-date';
 import type { Caller } from '../../core/caller';
 import { AppError } from '../../core/errors';
 import type { FileStore } from '../../core/file-store';
-import { type CardRenderer, prepareCardPhoto } from '../cards';
+import { type CardRenderer, type CardTemple, prepareCardPhoto } from '../cards';
 import type { TempleAccess } from '../temples';
-import type { MembershipTerm, Role } from '../temples/temple';
-import type { Member, MemberRepository } from './member';
+import type { MembershipTerm, Role, Temple } from '../temples/temple';
+import type { FiledMember, Member, MemberNumber, MemberRepository, NumberTaken } from './member';
 
 /** The roles whose Home screen in the app has "Add a Member". */
 const mayAddMembers: Role[] = ['admin', 'frontDesk'];
 
-/** A new member's details, as `members.input.ts` leaves them: tidied and within limits. */
-export interface NewMemberRequest {
-  /** Chosen by the app, so that asking twice adds one member. */
+/** Everyone who works at the temple's desk or in its office. */
+const mayViewMembers: Role[] = ['admin', 'geshe', 'accountant', 'frontDesk', 'coordinator'];
+
+// How long a link to a member's photo works. The app keeps the photo once it
+// has it, so this only has to outlast a tablet left open at the desk.
+const photoLinkSeconds = 7 * 24 * 60 * 60;
+
+/** What every request about one member carries, tidied by `members.input.ts`. */
+interface MemberDetails {
+  /** Chosen by the app, so that asking twice does the work once. */
   id: string;
   name: string;
-  phone: string;
-  /** Empty when the member has none. */
+  /** Empty or left out when the member has none. */
+  phone?: string;
   email?: string;
-  /** The image as the app sent it. */
-  photo: Uint8Array;
   templeId?: string;
 }
 
-export interface NewMemberResult {
+export interface NewMemberRequest extends MemberDetails {
+  /** The image as the app sent it. */
+  photo: Uint8Array;
+  /** The digits of a number typed by hand. Left out, they get the next one. */
+  number?: string;
+  /** Whether to give them a number that someone already holds. */
+  replace?: boolean;
+}
+
+export interface PreviewCardRequest {
+  /** Whose card it is. Left out, it is a new member's. */
+  memberId?: string;
+  name: string;
+  /** Left out for a member on file, their photo is the one they have. */
+  photo?: Uint8Array;
+  number?: string;
+  templeId?: string;
+}
+
+export interface UpdateMemberRequest extends MemberDetails {
+  memberId: string;
+  /** Left out, they keep the photo they have. */
+  photo?: Uint8Array;
+  /** The digits of a new number. Left out, they keep the one they have. */
+  number?: string;
+}
+
+/** A member as saved, with their print-ready card: front, then back. */
+export interface IssuedCard {
   member: Member;
-  /** Their print-ready card: front, then back. */
+  pdf: Uint8Array;
+}
+
+/** A card as it would print, and the number on it. Nothing is saved. */
+export interface CardPreview {
+  number: MemberNumber;
   pdf: Uint8Array;
 }
 
@@ -37,60 +73,187 @@ export class MemberService {
     private readonly access: TempleAccess,
     private readonly members: MemberRepository,
     private readonly files: FileStore,
-    private readonly cardRenderer: (template: string) => Promise<CardRenderer>,
+    private readonly cardRenderer: (temple: CardTemple, files: FileStore) => Promise<CardRenderer>,
     private readonly now: () => Date,
   ) {}
 
-  /**
-   * Adds a member and prints their card: gives them the temple's next
-   * membership number and a membership that starts today.
-   */
-  async create(caller: Caller, request: NewMemberRequest): Promise<NewMemberResult> {
-    const temple = await this.access.templeFor(caller, request.templeId, mayAddMembers);
+  /** The temple's members, the newest first. */
+  async list(caller: Caller, templeId?: string): Promise<Member[]> {
+    const temple = await this.access.templeFor(caller, templeId, mayViewMembers);
+    return this.members.list(temple.id);
+  }
 
-    // Asked again because the answer was lost: the same member and card, not a second.
-    const existing = await this.members.find(temple.id, request.id);
-    if (existing) return { member: existing.member, pdf: await this.files.get(existing.pdfKey) };
+  /** A week-long link to the photo of a member this service handed out. */
+  photoUrl(member: Member): Promise<string | null> {
+    return this.files.urlFor(member.photoKey, photoLinkSeconds);
+  }
+
+  /** A member and the card they were last issued. */
+  async card(
+    caller: Caller,
+    request: { memberId: string; templeId?: string },
+  ): Promise<IssuedCard> {
+    const temple = await this.access.templeFor(caller, request.templeId, mayViewMembers);
+    return this.withCard(await this.filed(temple, request.memberId));
+  }
+
+  /**
+   * Draws the card a request would make, with the number it would carry:
+   * the one typed, the member's own, or the temple's next.
+   */
+  async preview(caller: Caller, request: PreviewCardRequest): Promise<CardPreview> {
+    const temple = await this.access.templeFor(caller, request.templeId, mayAddMembers);
+    const { renderer, name } = await this.printable(temple, request.name);
+
+    let photo: Uint8Array;
+    let validUntil: CalendarDate;
+    let digits = request.number;
+    if (request.memberId) {
+      const filed = await this.filed(temple, request.memberId);
+      photo = request.photo
+        ? await cardPhoto(renderer, request.photo)
+        : await this.files.get(filed.member.photoKey);
+      validUntil = filed.member.expiresOn;
+      digits ??= filed.digits;
+    } else {
+      if (!request.photo) throw AppError.invalid({ photo: 'photoRequired' });
+      photo = await cardPhoto(renderer, request.photo);
+      validUntil = membershipEnd(temple.membershipTerm, todayIn(temple.timeZone, this.now()));
+    }
+
+    const number = await this.members.numberFor(temple.id, digits);
+    const pdf = await renderer.render({ name, number: number.label, validUntil, photo });
+    return { number, pdf };
+  }
+
+  /**
+   * Adds a member and prints their card; the membership starts today. A
+   * typed number someone holds adds nothing unless `replace`.
+   */
+  async create(caller: Caller, request: NewMemberRequest): Promise<IssuedCard | NumberTaken> {
+    const temple = await this.access.templeFor(caller, request.templeId, mayAddMembers);
 
     // Everything that could stop the card printing is checked before a
     // membership number is taken.
-    const renderer = await this.cardRenderer(temple.cardTemplate);
-    const name = request.name.replace(/\s+/g, ' ');
-    const problem = renderer.nameProblem(name);
-    if (problem === 'unsupported') throw AppError.invalid({ name: 'memberNameUnsupported' });
-    if (problem === 'tooLong') throw AppError.invalid({ name: 'memberNameTooLong' });
-    const photo = await prepareCardPhoto(request.photo, renderer.photoPixels);
-    if (!photo) throw AppError.invalid({ photo: 'photoUnreadable' });
-
+    const { renderer, name } = await this.printable(temple, request.name);
+    const photo = await cardPhoto(renderer, request.photo);
     const today = todayIn(temple.timeZone, this.now());
     const expiresOn = membershipEnd(temple.membershipTerm, today);
-    const folder = `temples/${temple.id}/members/${request.id}`;
-    const photoKey = `${folder}/photo.jpg`;
-    await this.files.put(photoKey, photo, 'image/jpeg');
 
-    const { member, card } = await this.members.create(
+    const saved = await this.members.save(
       {
         id: request.id,
         templeId: temple.id,
         name,
         email: request.email || null,
-        phone: request.phone,
-        photoKey,
+        phone: request.phone || null,
         joinedOn: today,
         renewedOn: today,
         expiresOn,
         createdBy: caller.uid,
       },
-      async (number) => {
-        const cardId = randomUUID();
-        const pdfKey = `${folder}/cards/${cardId}.pdf`;
+      { digits: request.number, replace: request.replace ?? false },
+      async (number, memberId) => {
+        const { photoKey, pdfKey } = cardFiles(temple.id, memberId, request.id);
+        await this.files.put(photoKey, photo, 'image/jpeg');
         const pdf = await renderer.render({ name, number, validUntil: expiresOn, photo });
         await this.files.put(pdfKey, pdf, 'application/pdf');
-        return { id: cardId, template: temple.cardTemplate, photoKey, pdfKey, pdf };
+        return { id: request.id, template: temple.cardTemplate, photoKey, pdfKey, pdf };
       },
     );
-    return { member, pdf: card.pdf };
+    if ('taken' in saved) return saved;
+    if ('issued' in saved) return this.withCard(saved.issued);
+    return { member: saved.member, pdf: saved.card.pdf };
   }
+
+  /**
+   * Changes a member's details. Their card is printed again only if what is
+   * on it changed: the name, the photo or the number.
+   */
+  async update(caller: Caller, request: UpdateMemberRequest): Promise<IssuedCard | NumberTaken> {
+    const temple = await this.access.templeFor(caller, request.templeId, mayAddMembers);
+    const { renderer, name } = await this.printable(temple, request.name);
+    const photo = request.photo && (await cardPhoto(renderer, request.photo));
+
+    const changed = await this.members.change(
+      {
+        cardId: request.id,
+        templeId: temple.id,
+        memberId: request.memberId,
+        name,
+        email: request.email || null,
+        phone: request.phone || null,
+        number: request.number,
+        changedBy: caller.uid,
+      },
+      async ({ member }, number) => {
+        if (!photo && name === member.name && number === member.number) return undefined;
+
+        const { photoKey, pdfKey } = cardFiles(temple.id, member.id, request.id);
+        if (photo) await this.files.put(photoKey, photo, 'image/jpeg');
+        const pdf = await renderer.render({
+          name,
+          number,
+          validUntil: member.expiresOn,
+          photo: photo ?? (await this.files.get(member.photoKey)),
+        });
+        await this.files.put(pdfKey, pdf, 'application/pdf');
+        return {
+          id: request.id,
+          template: temple.cardTemplate,
+          photoKey: photo ? photoKey : member.photoKey,
+          pdfKey,
+          pdf,
+        };
+      },
+    );
+    if (!changed) throw noSuchMember(temple, request.memberId);
+    if ('taken' in changed) return changed;
+    if ('issued' in changed) return this.withCard(changed.issued);
+    return {
+      member: changed.member,
+      pdf: changed.card?.pdf ?? (await this.files.get(changed.pdfKey)),
+    };
+  }
+
+  private async withCard(filed: FiledMember): Promise<IssuedCard> {
+    return { member: filed.member, pdf: await this.files.get(filed.pdfKey) };
+  }
+
+  private async filed(temple: Temple, memberId: string): Promise<FiledMember> {
+    const filed = await this.members.find(temple.id, memberId);
+    if (!filed) throw noSuchMember(temple, memberId);
+    return filed;
+  }
+
+  /** The temple's card, and `name` as it prints on it. Refuses a name it cannot print. */
+  private async printable(
+    temple: Temple,
+    typed: string,
+  ): Promise<{ renderer: CardRenderer; name: string }> {
+    const renderer = await this.cardRenderer(temple, this.files);
+    const name = typed.replace(/\s+/g, ' ');
+    const problem = renderer.nameProblem(name);
+    if (problem === 'unsupported') throw AppError.invalid({ name: 'memberNameUnsupported' });
+    if (problem === 'tooLong') throw AppError.invalid({ name: 'memberNameTooLong' });
+    return { renderer, name };
+  }
+}
+
+function noSuchMember(temple: Temple, memberId: string): AppError {
+  return AppError.notFound(`${temple.id} has no member with the id "${memberId}".`);
+}
+
+/** Where a card's photo and its PDF are kept: side by side, under the member. */
+function cardFiles(templeId: string, memberId: string, cardId: string) {
+  const card = `temples/${templeId}/members/${memberId}/cards/${cardId}`;
+  return { photoKey: `${card}.jpg`, pdfKey: `${card}.pdf` };
+}
+
+async function cardPhoto(renderer: CardRenderer, image: Uint8Array): Promise<Uint8Array> {
+  const photo = await prepareCardPhoto(image, renderer.photoPixels);
+  if (!photo) throw AppError.invalid({ photo: 'photoUnreadable' });
+  return photo;
 }
 
 /** The last day of a membership bought or renewed `today`. */

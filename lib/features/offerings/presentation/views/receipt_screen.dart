@@ -87,6 +87,10 @@ class _ReceiptDocument extends ConsumerWidget {
               '${l10n.tibetanDate(tibetan.month, tibetan.day)}';
     final names = receipt.prayerNames(l10n);
     final payment = receipt.donation?.payment;
+    final letterhead = [
+      temple.address,
+      temple.charityRegistration,
+    ].where((line) => line.isNotEmpty).join('\n');
 
     final rows = [
       (l10n.receiptDate, issued),
@@ -140,12 +144,15 @@ class _ReceiptDocument extends ConsumerWidget {
                   textAlign: TextAlign.center,
                   style: type.tibetan(17, color: AppPalette.paperInkSoft),
                 ),
-              const SizedBox(height: 6),
-              Text(
-                '${temple.address}\n${temple.charityRegistration}',
-                textAlign: TextAlign.center,
-                style: type.sans(12.5, color: muted, height: 1.5),
-              ),
+              // Until a temple has given them, there is nothing to print here.
+              if (letterhead.isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Text(
+                  letterhead,
+                  textAlign: TextAlign.center,
+                  style: type.sans(12.5, color: muted, height: 1.5),
+                ),
+              ],
               const SizedBox(height: 14),
               const PrayerFlagStripe(height: 4, white: AppPalette.parchment),
               const SizedBox(height: 14),

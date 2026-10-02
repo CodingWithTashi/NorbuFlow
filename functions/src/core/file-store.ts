@@ -6,6 +6,11 @@ export interface FileStore {
   put(key: string, bytes: Uint8Array, contentType: string): Promise<void>;
   /** The file stored under `key`. Fails if there is none. */
   get(key: string): Promise<Uint8Array>;
+  /**
+   * An address that fetches the file under `key` for `seconds`, for the app
+   * to load a picture itself. `null` from a store that has no addresses.
+   */
+  urlFor(key: string, seconds: number): Promise<string | null>;
 }
 
 export interface R2Settings {
@@ -46,6 +51,12 @@ export async function openR2(settings: R2Settings): Promise<FileStore> {
       if (!Body) throw new Error(`No file is stored as "${key}".`);
       return Body.transformToByteArray();
     },
+    urlFor: async (key, seconds) => {
+      // Signed here, with no request made: cheap enough for a whole list.
+      const { getSignedUrl } = await import('@aws-sdk/s3-request-presigner');
+      const command = new GetObjectCommand({ Bucket: settings.bucket, Key: key });
+      return getSignedUrl(client, command, { expiresIn: seconds });
+    },
   };
 }
 
@@ -61,5 +72,10 @@ export class InMemoryFileStore implements FileStore {
     const file = this.files.get(key);
     if (!file) throw new Error(`No file is stored as "${key}".`);
     return file.bytes;
+  }
+
+  // Nothing outside this process can fetch what is only in its memory.
+  async urlFor(): Promise<string | null> {
+    return null;
   }
 }

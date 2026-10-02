@@ -40,6 +40,8 @@ abstract final class AppRoutes {
 
   static String member(String memberId) => '$members/$memberId';
 
+  static String editMember(String memberId) => '${member(memberId)}/edit';
+
   static String donation(String kind) => '$offerings/donation/$kind';
 
   static String receipt(String number) => '$offerings/receipt/$number';

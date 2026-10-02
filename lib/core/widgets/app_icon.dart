@@ -96,6 +96,9 @@ abstract final class AppIcons {
     'M4 6h16M4 12h16M4 18h16M8 4v4M16 10v4M10 16v4',
   );
   static const swap = AppIconData('M7 7h13l-3-3M17 17H4l3 3');
+  static const turnLeft = AppIconData('M4 12a8 8 0 1 0 2.3-5.7M4 4v4h4');
+  static const turnRight = AppIconData('M20 12a8 8 0 1 1-2.3-5.7M20 4v4h-4');
+  static const flip = AppIconData('M12 3v18M8 7l-5 5 5 5zM16 7l5 5-5 5z');
   static const alert = AppIconData('M12 5v9M12 18.5v.01');
   static const minus = AppIconData('M6 12h12');
   static const arrowUp = AppIconData('M12 19V5M6 11l6-6 6 6');

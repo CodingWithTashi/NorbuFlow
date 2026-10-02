@@ -1,20 +1,6 @@
 import { readAsset } from '../../../core/assets';
 import type { CardTemplate } from '../card-template';
-
-const months = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December',
-];
+import { monthNames } from '../month-names';
 
 const artwork = 'drepung-loseling-canada';
 const ink = [0.0353, 0.0588, 0.0627] as const;
@@ -56,7 +42,7 @@ export function drepungLoselingCanada(): CardTemplate {
       letterSpacing,
       below: 10 * pixel,
       text: ({ year, month, day }) =>
-        `Valid: ${year}-${months[month - 1]}-${String(day).padStart(2, '0')}`,
+        `Valid: ${year}-${monthNames[month - 1]}-${String(day).padStart(2, '0')}`,
     },
     numberLabel: {
       font: 'regular',

@@ -16,6 +16,15 @@ abstract final class LetterComposer {
     final first = firstNameOf(volunteer.name);
     final hours = volunteer.hoursThisYear;
     final duties = volunteer.duties.toLowerCase();
+    // A temple that has not said who signs, or its charity number, omits them.
+    final signed = [
+      if (temple.signatory.isNotEmpty) temple.signatory,
+      temple.nameEn,
+    ].join('\n');
+    final registered = [
+      temple.nameEn,
+      if (temple.charityRegistration.isNotEmpty) temple.charityRegistration,
+    ].join(' · ');
     return switch (type) {
       LetterType.thanks =>
         'Dear $first,\n\n'
@@ -24,8 +33,7 @@ abstract final class LetterComposer {
             'with $duties. Your generosity keeps our temple open and '
             'welcoming for all.\n\n'
             'With gratitude and prayers,\n'
-            '${temple.signatory}\n'
-            '${temple.nameEn}',
+            '$signed',
       LetterType.reference =>
         'To whom it may concern,\n\n'
             'I am pleased to recommend ${volunteer.name}, who has volunteered '
@@ -35,8 +43,8 @@ abstract final class LetterComposer {
             '$first is reliable, kind and works well with people of all ages. '
             'We would be glad to answer any questions.\n\n'
             'With best wishes,\n'
-            '${temple.signatory}\n'
-            '${temple.nameEn} · ${temple.charityRegistration}',
+            '${temple.signatory.isEmpty ? '' : '${temple.signatory}\n'}'
+            '$registered',
       LetterType.certificate =>
         'CERTIFICATE OF SERVICE\n\n'
             'This certifies that ${volunteer.name} has given $hours hours of '
@@ -44,8 +52,7 @@ abstract final class LetterComposer {
             'with $duties.\n\n'
             'Presented with gratitude on ${Formats.monthDay(today)}, '
             '${today.year}.\n\n'
-            '${temple.signatory}\n'
-            '${temple.nameEn}',
+            '$signed',
     };
   }
 }

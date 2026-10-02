@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/error/validation_issue.dart';
 import '../../../../core/utils/clock.dart';
 import '../../../../core/utils/validators.dart';
+import '../../../temple/presentation/view_models/temple_session.dart';
 import '../../domain/member.dart';
 import 'members_view_model.dart';
 import 'photo_draft.dart';
@@ -170,7 +171,8 @@ final addMemberViewModelProvider =
 class NewMemberPreview {
   const NewMemberPreview({required this.number, required this.expiresOn});
 
-  final int number;
+  /// As the temple writes it.
+  final String number;
 
   /// Null for a life membership.
   final DateTime? expiresOn;
@@ -179,9 +181,12 @@ class NewMemberPreview {
 final newMemberPreviewProvider = Provider.autoDispose<NewMemberPreview>((ref) {
   final members = ref.watch(membersProvider).value ?? const <Member>[];
   final type = ref.watch(addMemberViewModelProvider.select((s) => s.type));
-  final highest = members.fold(0, (max, m) => m.number > max ? m.number : max);
+  final monogram = ref.watch(currentTempleProvider)?.monogram ?? '';
   return NewMemberPreview(
-    number: highest + 1,
+    number: Member.numberAfter(
+      members.map((member) => member.number),
+      whenNone: '$monogram-0001',
+    ),
     expiresOn: type.isLifetime ? null : ref.watch(todayProvider).plusOneYear,
   );
 });

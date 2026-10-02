@@ -15,8 +15,6 @@ import '../../../../core/widgets/avatars.dart';
 import '../../../../core/widgets/buttons.dart';
 import '../../../../core/widgets/decor.dart';
 import '../../../../core/widgets/tiles.dart';
-import '../../../temple/domain/temple.dart';
-import '../../../temple/presentation/view_models/temple_session.dart';
 import '../../domain/member.dart';
 import '../member_labels.dart';
 import '../view_models/check_in_view_model.dart';
@@ -34,7 +32,6 @@ class CheckInScreen extends ConsumerWidget {
     final state = ref.watch(checkInViewModelProvider);
     final viewModel = ref.read(checkInViewModelProvider.notifier);
     final matches = ref.watch(checkInMatchesProvider);
-    final temple = ref.watch(currentTempleProvider);
     final demoMode = ref.watch(appConfigProvider).demoMode;
     final result = state.result;
 
@@ -50,8 +47,8 @@ class CheckInScreen extends ConsumerWidget {
         children: [
           ScreenHeading(title: l10n.checkInTitle),
           const SizedBox(height: 14),
-          if (result != null && temple != null) ...[
-            _CheckedInCard(checkIn: result, temple: temple),
+          if (result != null) ...[
+            _CheckedInCard(checkIn: result),
             const SizedBox(height: 14),
             SecondaryButton(
               label: l10n.checkInAnother,
@@ -88,9 +85,7 @@ class CheckInScreen extends ConsumerWidget {
                 for (final member in matches)
                   ListRow(
                     title: member.nameEn,
-                    subtitle: temple == null
-                        ? null
-                        : memberNumberLabel(temple, member.number),
+                    subtitle: member.number,
                     minHeight: 64,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16,
@@ -187,10 +182,9 @@ class _CornerBracketsPainter extends CustomPainter {
 }
 
 class _CheckedInCard extends ConsumerWidget {
-  const _CheckedInCard({required this.checkIn, required this.temple});
+  const _CheckedInCard({required this.checkIn});
 
   final CheckIn checkIn;
-  final Temple temple;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -237,10 +231,7 @@ class _CheckedInCard extends ConsumerWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    l10n.checkInAt(
-                      Formats.time(checkIn.at),
-                      memberNumberLabel(temple, member.number),
-                    ),
+                    l10n.checkInAt(Formats.time(checkIn.at), member.number),
                     style: type.sans(15, color: ink, height: 1.4),
                   ),
                   IconLabel(

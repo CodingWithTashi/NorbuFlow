@@ -7,6 +7,8 @@ import '../core/config/app_config.dart';
 import '../core/error/error_reporter.dart';
 import '../core/error/failure_mapper.dart';
 import '../core/error/provider_error_observer.dart';
+import '../core/models/phone_country.dart';
+import '../core/services/device_country.dart';
 import '../features/auth/data/auth_repositories.dart';
 import '../features/auth/domain/auth_repository.dart';
 import '../features/auth/presentation/view_models/auth_view_model.dart';
@@ -31,6 +33,7 @@ Future<void> bootstrap() async {
   }
   final preferencesRepository = setup.read(preferencesRepositoryProvider);
   final authRepository = setup.read(authRepositoryProvider);
+  final deviceCountry = setup.read(deviceCountryProvider);
   final reporter = setup.read(errorReporterProvider);
   setup.dispose();
 
@@ -52,13 +55,14 @@ Future<void> bootstrap() async {
     }
   }
 
-  final (preferences, session) = await (
+  final (preferences, session, country) = await (
     load(
       'preferences.load',
       preferencesRepository.load,
       const AppPreferences(),
     ),
     load('auth.restore', authRepository.restore, const AuthSession()),
+    load('device.country', deviceCountry.isoCode, null),
   ).wait;
 
   FlutterError.onError = (details) {
@@ -87,6 +91,9 @@ Future<void> bootstrap() async {
         errorReporterProvider.overrideWithValue(reporter),
         initialPreferencesProvider.overrideWithValue(preferences),
         initialSessionProvider.overrideWithValue(session),
+        // A country the app has no numbers for leaves the default.
+        if (PhoneCountry.fromIso(country) case final country?)
+          homePhoneCountryProvider.overrideWithValue(country),
       ],
       child: const NorbuFlowApp(),
     ),

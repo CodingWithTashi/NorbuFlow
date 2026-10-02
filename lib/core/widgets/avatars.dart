@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../models/photo_source.dart';
@@ -5,21 +6,50 @@ import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 import '../utils/formatters.dart';
 
-/// Renders a [PhotoSource] filling its box.
+/// Renders a [PhotoSource] filling its box. A photo from the backend is
+/// kept on the device once fetched, so it is downloaded only once.
 class PhotoImage extends StatelessWidget {
-  const PhotoImage(this.photo, {super.key});
+  const PhotoImage(
+    this.photo, {
+    super.key,
+    this.alignment = Alignment.center,
+    this.fallback,
+    this.cacheWidth,
+  });
 
   final PhotoSource photo;
 
+  /// Which part of the photo to keep when its shape is not the box's.
+  final Alignment alignment;
+
+  /// Shown while a photo is on its way, and in its place if it never comes.
+  final Widget? fallback;
+
+  /// Decodes a fetched photo no wider than this, in pixels: a small avatar
+  /// does not need the whole picture in memory.
+  final int? cacheWidth;
+
   @override
   Widget build(BuildContext context) {
+    final waiting = fallback ?? const SizedBox.shrink();
     return switch (photo) {
       MemoryPhoto(:final bytes) => Image.memory(
         bytes,
         fit: BoxFit.cover,
+        alignment: alignment,
         gaplessPlayback: true,
       ),
-      NetworkPhoto(:final url) => Image.network(url, fit: BoxFit.cover),
+      NetworkPhoto(:final url, :final cacheKey) => CachedNetworkImage(
+        imageUrl: url,
+        cacheKey: cacheKey,
+        fit: BoxFit.cover,
+        alignment: alignment,
+        memCacheWidth: cacheWidth,
+        fadeInDuration: const Duration(milliseconds: 150),
+        fadeOutDuration: Duration.zero,
+        placeholder: (_, _) => waiting,
+        errorWidget: (_, _, _) => waiting,
+      ),
     };
   }
 }
@@ -46,13 +76,27 @@ class PersonAvatar extends StatelessWidget {
   final Color ringColor;
   final double ringWidth;
 
+  /// Sharp on the densest screens the app runs on.
+  static const _pixelsPerPoint = 3;
+
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
+    final initials = Center(
+      child: Text(
+        initialsOf(name),
+        textScaler: TextScaler.noScaling,
+        style: context.type.serif(
+          size * 0.34,
+          weight: FontWeight.w600,
+          color: foreground ?? colors.accentText,
+          height: 1,
+        ),
+      ),
+    );
     return Container(
       width: size,
       height: size,
-      alignment: Alignment.center,
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
@@ -63,16 +107,15 @@ class PersonAvatar extends StatelessWidget {
           strokeAlign: BorderSide.strokeAlignOutside,
         ),
       ),
-      child: photo != null
-          ? SizedBox.expand(child: PhotoImage(photo!))
-          : Text(
-              initialsOf(name),
-              textScaler: TextScaler.noScaling,
-              style: context.type.serif(
-                size * 0.34,
-                weight: FontWeight.w600,
-                color: foreground ?? colors.accentText,
-                height: 1,
+      child: photo == null
+          ? initials
+          : SizedBox.expand(
+              child: PhotoImage(
+                photo!,
+                // An ID photo is taller than the circle: keep the face.
+                alignment: const Alignment(0, -0.6),
+                fallback: initials,
+                cacheWidth: (size * _pixelsPerPoint).round(),
               ),
             ),
     );

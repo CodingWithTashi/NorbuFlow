@@ -16,7 +16,7 @@ import {
 } from 'pdf-lib';
 
 import type { CalendarDate } from '../../core/calendar-date';
-import type { CardTemplate, FontKey, TextColumn, TextStyle } from './card-template';
+import type { Anchor, CardTemplate, FontKey, TextColumn, TextStyle } from './card-template';
 
 export interface CardDetails {
   name: string;
@@ -38,7 +38,7 @@ const plainText = { kern: false, liga: false };
 // How far a Bézier handle sits from a corner to draw a quarter circle.
 const quarterCircle = 0.5522847;
 
-type Fonts = Record<FontKey, PDFFont>;
+export type Fonts = Record<FontKey, PDFFont>;
 
 /**
  * Fills a card template with one member's details and returns a two-page PDF
@@ -73,13 +73,7 @@ export class CardRenderer {
 
   /** Why `name` cannot be printed, or `undefined` if it can. */
   nameProblem(name: string): NameProblem | undefined {
-    const style = this.template.name;
-    const supported = new Set(this.fonts[style.font].getCharacterSet());
-    if ([...name].some((char) => !supported.has(char.codePointAt(0)!))) return 'unsupported';
-
-    const lines = wrap(this.fonts, style, name);
-    const fits = lines.every((line) => widthOf(this.fonts, style, line) <= style.width);
-    return fits && lines.length <= style.maxLines ? undefined : 'tooLong';
+    return textProblem(this.fonts, this.template.name, name);
   }
 
   async render(details: CardDetails): Promise<Uint8Array> {
@@ -121,19 +115,45 @@ export class CardRenderer {
       validity.text(details.validUntil),
       lastBaseline - validity.below,
     );
-    draw(front, fonts, numberLabel, numberLabel.text, numberLabel.x, numberLabel.baseline);
-    draw(front, fonts, number, details.number, number.x, number.baseline);
+    place(front, fonts, numberLabel, numberLabel.text);
+    place(front, fonts, number, details.number);
 
     return pdf.save();
   }
 }
 
-async function embedFonts(pdf: PDFDocument, template: CardTemplate): Promise<Fonts> {
+/** The fonts a card is set in, embedded in `pdf`. */
+export async function embedFonts(
+  pdf: PDFDocument,
+  template: Pick<CardTemplate, 'fonts'>,
+): Promise<Fonts> {
   pdf.registerFontkit(fontkit);
   const embed = (key: FontKey) =>
     pdf.embedFont(template.fonts[key], { subset: true, features: plainText });
   const [regular, bold] = await Promise.all([embed('regular'), embed('bold')]);
   return { regular, bold };
+}
+
+function place(page: PDFPage, fonts: Fonts, style: TextStyle & Anchor, text: string): void {
+  if ('column' in style) {
+    drawCentred(page, fonts, { ...style, ...style.column }, text, style.baseline);
+  } else {
+    draw(page, fonts, style, text, style.x, style.baseline);
+  }
+}
+
+/** Why `text` cannot be set in `style`'s column on `maxLines` lines, if it cannot. */
+export function textProblem(
+  fonts: Fonts,
+  style: TextStyle & TextColumn & { maxLines: number },
+  text: string,
+): NameProblem | undefined {
+  const supported = new Set(fonts[style.font].getCharacterSet());
+  if ([...text].some((char) => !supported.has(char.codePointAt(0)!))) return 'unsupported';
+
+  const lines = wrap(fonts, style, text);
+  const fits = lines.every((line) => widthOf(fonts, style, line) <= style.width);
+  return fits && lines.length <= style.maxLines ? undefined : 'tooLong';
 }
 
 /** The width of `text` as `draw` sets it, letter spacing included. */
@@ -162,7 +182,7 @@ function draw(
   page.pushOperators(popGraphicsState());
 }
 
-function drawCentred(
+export function drawCentred(
   page: PDFPage,
   fonts: Fonts,
   style: TextStyle & TextColumn,
@@ -175,7 +195,7 @@ function drawCentred(
 }
 
 /** Breaks `text` between words so that each line fits the column if it can. */
-function wrap(fonts: Fonts, style: TextStyle & TextColumn, text: string): string[] {
+export function wrap(fonts: Fonts, style: TextStyle & TextColumn, text: string): string[] {
   const lines: string[] = [];
   for (const word of text.trim().split(/\s+/)) {
     const last = lines.at(-1);
