@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:norbu_flow/app/router/app_router.dart';
 import 'package:norbu_flow/app/router/app_routes.dart';
@@ -10,7 +11,9 @@ import 'package:norbu_flow/features/members/presentation/view_models/members_vie
 import 'package:norbu_flow/features/members/presentation/views/member_detail_view.dart';
 import 'package:norbu_flow/features/settings/domain/app_preferences.dart';
 import 'package:norbu_flow/features/settings/presentation/view_models/preferences_view_model.dart';
+import 'package:norbu_flow/features/temple/data/fake_temple_repository.dart';
 import 'package:norbu_flow/features/temple/domain/role.dart';
+import 'package:norbu_flow/features/temple/domain/temple_features.dart';
 import 'package:norbu_flow/features/temple/presentation/view_models/temple_session.dart';
 
 import 'support/cards.dart';
@@ -221,6 +224,41 @@ void main() {
 
   for (final (name, size) in [
     ('phone', _phone),
+    ('tablet', _tabletLandscape),
+  ]) {
+    testWidgets('a $name shows only the tabs and Home cards the temple has '
+        'on', (tester) async {
+      tester.setScreenSize(size);
+      final container = await _signedInApp(
+        tester,
+        overrides: [
+          currentTempleProvider.overrideWith(
+            (ref) => FakeTemples.all.first.copyWith(features: _loseling),
+          ),
+        ],
+      );
+
+      for (final shown in ['Home', 'Members', 'More', 'Add a Member']) {
+        expect(find.text(shown), findsOneWidget, reason: shown);
+      }
+      expect(find.text('Volunteer Letter'), findsOneWidget);
+      for (final hidden in ['Offerings', 'Calendar', 'Record a Donation']) {
+        expect(find.text(hidden), findsNothing, reason: hidden);
+      }
+
+      // Each tab still opens its own section, though the ones before it are
+      // fewer.
+      await tester.tap(find.text('More'));
+      await tester.pumpAndSettle();
+      expect(_shownPath(container), AppRoutes.more);
+      await tester.tap(find.text('Members'));
+      await tester.pumpAndSettle();
+      expect(_shownPath(container), AppRoutes.members);
+    });
+  }
+
+  for (final (name, size) in [
+    ('phone', _phone),
     ('tablet portrait', _tabletPortrait),
     ('tablet landscape', _tabletLandscape),
   ]) {
@@ -281,11 +319,21 @@ void main() {
   });
 }
 
+/// What Drepung Loseling Canada shows for now.
+const _loseling = TempleFeatures(
+  tabs: {TempleTab.members},
+  homeActions: {HomeAction.addMember, HomeAction.letter},
+);
+
+String _shownPath(ProviderContainer container) =>
+    container.read(routerProvider).routerDelegate.currentConfiguration.uri.path;
+
 /// The app, signed in. With [liveMembers], the members screens are the ones
 /// the backend has, on the fakes, and cards are drawn without a device.
 Future<ProviderContainer> _signedInApp(
   WidgetTester tester, {
   bool liveMembers = false,
+  List<Override> overrides = const [],
 }) async {
   final container = liveMembers
       ? createContainer(
@@ -295,9 +343,10 @@ Future<ProviderContainer> _signedInApp(
           ),
           overrides: [
             documentPrinterProvider.overrideWithValue(RecordingPrinter()),
+            ...overrides,
           ],
         )
-      : createContainer();
+      : createContainer(overrides: overrides);
   await tester.pumpApp(container);
   await tester.runAsync(() async {
     await signIn(container);

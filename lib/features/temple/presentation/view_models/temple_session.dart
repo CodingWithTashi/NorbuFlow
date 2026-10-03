@@ -7,6 +7,7 @@ import '../../../auth/presentation/view_models/auth_view_model.dart';
 import '../../data/temple_repositories.dart';
 import '../../domain/role.dart';
 import '../../domain/temple.dart';
+import '../../domain/temple_features.dart';
 
 /// The temples the signed-in person belongs to. Single source of truth for
 /// temple details: saving settings updates this list and everything that
@@ -107,3 +108,13 @@ final rolePreviewProvider = NotifierProvider<RolePreviewViewModel, Role?>(
 final homeRoleProvider = Provider<Role>(
   (ref) => ref.watch(rolePreviewProvider) ?? ref.watch(myRoleProvider),
 );
+
+/// The Home cards shown: the role's, less those the temple has switched off.
+final homeActionsProvider = Provider<List<HomeAction>>((ref) {
+  final features =
+      ref.watch(currentTempleProvider)?.features ?? const TempleFeatures.all();
+  return [
+    for (final action in ref.watch(homeRoleProvider).homeActions)
+      if (features.showsHome(action)) action,
+  ];
+});

@@ -1,7 +1,8 @@
 # Registering a temple
 
-Three requests, sent from a terminal. The app cannot make them: each needs the
-operator's key, `ADMIN_KEY` in `functions/.env`.
+Three requests, sent from a terminal, and a fourth to change what its app
+shows. The app cannot make them: each needs the operator's key, `ADMIN_KEY`
+in `functions/.env`.
 
 What to ask the temple for: its **name**, a **line describing it**, its
 **logo** as an image file, and the **email of the person who will run it**.
@@ -43,7 +44,8 @@ curl -X POST "$NORBU_API/temples-create" \
     "timeZone": "America/Vancouver",
     "cardTemplate": "standard",
     "membership": { "kind": "rolling", "months": 12 },
-    "hasLogo": false
+    "hasLogo": false,
+    "features": ["home.addMember", "home.letter", "tab.members"]
   }
 }
 ```
@@ -113,6 +115,69 @@ sent no link.
 
 Send the request again with another email to give the temple a second admin,
 or with another `templeId` to give one person a second temple.
+
+## 4. Choose what its app shows
+
+A new temple starts with the Members tab and two Home cards, Add a Member and
+Volunteer Letter. Home and More are always shown. To change that, send
+everything it should show; the list replaces the one before.
+
+```sh
+curl -X POST "$NORBU_API/temples-setFeatures" \
+  -H "Authorization: Bearer $NORBU_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "templeId": "drolma-ling-centre",
+    "features": ["tab.members", "tab.offerings", "home.addMember", "home.letter", "home.donate"]
+  }'
+```
+
+```json
+{
+  "temple": {
+    "id": "drolma-ling-centre",
+    "...": "...",
+    "features": ["home.addMember", "home.donate", "home.letter", "tab.members", "tab.offerings"]
+  }
+}
+```
+
+The app shows the change the next time it starts: closed fully and opened again,
+or after signing in.
+
+| Name            | Shows             |
+| --------------- | ----------------- |
+| `tab.members`   | the Members tab   |
+| `tab.offerings` | the Offerings tab |
+| `tab.calendar`  | the Calendar tab  |
+
+A Home card is shown only to the roles that have it. A card that opens a
+tab's screen needs that tab on as well.
+
+| Name                | Home card               | Roles that have it                        | Opens in  |
+| ------------------- | ----------------------- | ----------------------------------------- | --------- |
+| `home.addMember`    | Add a Member            | admin, frontDesk                          | Members   |
+| `home.renew`        | Renew Membership        | accountant, frontDesk, member             | Members   |
+| `home.donate`       | Record a Donation       | admin, accountant, frontDesk, member      | Offerings |
+| `home.receipt`      | Send a Receipt          | accountant, frontDesk                     | Offerings |
+| `home.checkIn`      | Check-in                | admin, frontDesk                          | Home      |
+| `home.volunteers`   | This Month's Volunteers | admin, frontDesk, coordinator             | Calendar  |
+| `home.announce`     | Make an Announcement    | admin, accountant, coordinator, volunteer | Home      |
+| `home.assign`       | Assign a Shift          | coordinator                               | Calendar  |
+| `home.letter`       | Volunteer Letter        | admin, frontDesk, coordinator             | Home      |
+| `home.hours`        | Volunteer Hours         | coordinator, volunteer                    | Home      |
+| `home.reports`      | Reports                 | accountant                                | Home      |
+| `home.tax`          | Year-end Tax Receipts   | accountant                                | Home      |
+| `home.team`         | Temple Team             | admin                                     | More      |
+| `home.prayers`      | Prayer Name Lists       | geshe                                     | Home      |
+| `home.pujaRequests` | Puja Requests           | geshe, member                             | Offerings |
+| `home.calendar`     | Temple Calendar         | geshe, volunteer                          | Calendar  |
+| `home.approve`      | Approve Announcements   | geshe                                     | Home      |
+| `home.plan`         | Volunteer Plan          | coordinator                               | Calendar  |
+| `home.myShifts`     | My Shifts               | volunteer                                 | Calendar  |
+| `home.myCard`       | My ID Card              | member                                    | Members   |
+
+A name it does not know is refused (`400`), listing the names there are.
 
 ## When a request is refused
 

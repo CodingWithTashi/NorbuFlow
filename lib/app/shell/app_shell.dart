@@ -11,13 +11,14 @@ import '../../core/widgets/async_value_view.dart';
 import '../../core/widgets/avatars.dart';
 import '../../core/widgets/decor.dart';
 import '../../features/temple/domain/temple.dart';
+import '../../features/temple/domain/temple_features.dart';
 import '../../features/temple/presentation/temple_labels.dart';
 import '../../features/temple/presentation/view_models/temple_session.dart';
 import '../../features/temple/presentation/views/temple_switcher.dart';
 import '../router/app_routes.dart';
 
-/// The signed-in frame: temple header on top, the five sections reachable
-/// from a tab bar on phones or a side rail on tablets.
+/// The signed-in frame: temple header on top, the sections the temple shows
+/// reachable from a tab bar on phones or a side rail on tablets.
 class AppShell extends ConsumerWidget {
   const AppShell({
     super.key,
@@ -51,7 +52,7 @@ class AppShell extends ConsumerWidget {
 
     final windowClass = context.windowClass;
     final compact = windowClass == WindowClass.compact;
-    final tabs = _tabs(context);
+    final tabs = _tabs(context, temple.features);
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
@@ -98,23 +99,27 @@ class AppShell extends ConsumerWidget {
     );
   }
 
-  /// In branch order (see the router).
-  List<_Tab> _tabs(BuildContext context) {
+  /// The tabs the temple shows. Each keeps its branch index (see the router).
+  List<_Tab> _tabs(BuildContext context, TempleFeatures features) {
     final l10n = context.l10n;
     return [
-      _Tab(AppIcons.home, l10n.tabHome),
-      _Tab(AppIcons.members, l10n.tabMembers),
-      _Tab(AppIcons.bowl, l10n.tabOfferings),
-      _Tab(AppIcons.calendar, l10n.tabCalendar),
-      _Tab(AppIcons.more, l10n.tabMore),
+      _Tab(0, AppIcons.home, l10n.tabHome),
+      if (features.shows(TempleTab.members))
+        _Tab(1, AppIcons.members, l10n.tabMembers),
+      if (features.shows(TempleTab.offerings))
+        _Tab(2, AppIcons.bowl, l10n.tabOfferings),
+      if (features.shows(TempleTab.calendar))
+        _Tab(3, AppIcons.calendar, l10n.tabCalendar),
+      _Tab(4, AppIcons.more, l10n.tabMore),
     ];
   }
 }
 
 @immutable
 class _Tab {
-  const _Tab(this.icon, this.label);
+  const _Tab(this.branch, this.icon, this.label);
 
+  final int branch;
   final AppIconData icon;
   final String label;
 }
@@ -294,12 +299,12 @@ class _BottomTabBar extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              for (final (index, tab) in tabs.indexed)
+              for (final tab in tabs)
                 Expanded(
                   child: _TabButton(
                     tab: tab,
-                    selected: index == currentIndex,
-                    onTap: () => onSelect(index),
+                    selected: tab.branch == currentIndex,
+                    onTap: () => onSelect(tab.branch),
                   ),
                 ),
             ],
@@ -400,17 +405,17 @@ class _SideRail extends StatelessWidget {
             horizontal: extended ? 12 : 0,
           ),
           children: [
-            for (final (index, tab) in tabs.indexed)
+            for (final tab in tabs)
               extended
                   ? _RailRow(
                       tab: tab,
-                      selected: index == currentIndex,
-                      onTap: () => onSelect(index),
+                      selected: tab.branch == currentIndex,
+                      onTap: () => onSelect(tab.branch),
                     )
                   : _RailButton(
                       tab: tab,
-                      selected: index == currentIndex,
-                      onTap: () => onSelect(index),
+                      selected: tab.branch == currentIndex,
+                      onTap: () => onSelect(tab.branch),
                     ),
           ],
         ),

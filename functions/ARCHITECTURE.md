@@ -44,10 +44,11 @@ flowchart LR
 | --- | --- | --- | --- |
 | `auth-checkEmail` | public callable | anyone | Says whether an email is on some temple's team. Yes or no only. |
 | `auth-startSession` | callable | on a team | Upserts the `users` row, returns the profile. |
-| `temples-list` | callable | on a team | The caller's temples, with role and logo. |
+| `temples-list` | callable | on a team | The caller's temples, with role, logo and what each shows. |
 | `temples-create` | admin endpoint | operator | Registers a temple. |
 | `temples-setLogo` | admin endpoint | operator | Stores a logo under a new key. |
 | `temples-addAdmin` | admin endpoint | operator | Puts an email on the team, ensures a Firebase account. |
+| `temples-setFeatures` | admin endpoint | operator | Replaces the tabs and Home cards the temple's app shows. |
 | `members-list` | callable | admin, geshe, accountant, frontDesk, coordinator | The temple's members, newest first. |
 | `members-card` | callable | same as list | A member and the PDF of the card they hold. |
 | `members-preview` | callable, 1 GiB | admin, frontDesk | Draws the card. Saves nothing. |
@@ -200,7 +201,7 @@ sequenceDiagram
       F->>DB: upsert users by uid
       F-->>App: user profile
       App->>F: temples-list
-      F-->>App: temples with role and logo
+      F-->>App: temples with role, logo and features
     end
   end
 ```
@@ -258,6 +259,7 @@ sequenceDiagram
 ```mermaid
 erDiagram
   temples ||--o{ temple_staff : "team, cascade delete"
+  temples ||--o{ temple_features : "what its app shows, cascade delete"
   temples ||--o{ members : "has"
   members ||--o{ member_cards : "issued, cascade delete"
   users }o..o{ temple_staff : "same email, no FK"
@@ -294,6 +296,11 @@ erDiagram
     text email PK "lower case"
     text role "admin, geshe, accountant, frontDesk, coordinator, volunteer, member"
     timestamptz added_at
+  }
+
+  temple_features {
+    text temple_id PK, FK
+    text feature PK "tab.members, home.addMember, ..."
   }
 
   members {
@@ -342,6 +349,7 @@ erDiagram
 | `users` | index `users_by_email (email)` | Email is not unique: a remade account has a new uid. |
 | `temple_staff` | primary key `(temple_id, email)` | One role per person per temple. |
 | `temple_staff` | index `temple_staff_by_email (email)` | Sign-in and access look up by email. |
+| `temple_features` | primary key `(temple_id, feature)` | A tab or card is on once per temple. |
 | `members` | unique `(temple_id, number)` | A number is held by one member of a temple. |
 | `members` | unique `(temple_id, id)` | Target of the composite foreign key below. |
 | `members` | index `members_by_name (temple_id, lower(name))` | Search by name. |
@@ -361,6 +369,8 @@ erDiagram
   row turn it into what is printed, which `member_cards.number` keeps.
 - **`users` is a profile, not a permission.** Access comes from
   `temple_staff`, matched on email.
+- **A row in `temple_features` means on.** No row, not shown. Home and More
+  are always shown, so they have no names.
 - Only `auth`, `temples` and `members` have tables so far. Offerings,
   volunteers, announcements and the rest are still fakes in the app.
 

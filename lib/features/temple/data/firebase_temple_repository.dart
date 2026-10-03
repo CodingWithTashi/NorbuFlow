@@ -9,6 +9,7 @@ import '../../../core/utils/formatters.dart';
 import '../../../core/utils/json.dart';
 import '../domain/role.dart';
 import '../domain/temple.dart';
+import '../domain/temple_features.dart';
 
 /// The temples the backend has assigned to whoever is signed in.
 final class FirebaseTempleRepository implements TempleRepository {
@@ -52,7 +53,25 @@ final class FirebaseTempleRepository implements TempleRepository {
         address: '',
         signatory: '',
         logo: logo == null ? null : MemoryPhoto(base64Decode(logo)),
+        features: _featuresFromJson(fields['features']),
       ),
+    );
+  }
+
+  /// `tab.members`, `home.addMember`: names this version does not know are
+  /// skipped. A backend that sends none shows everything.
+  static TempleFeatures _featuresFromJson(Object? json) {
+    if (json == null) return const TempleFeatures.all();
+    final names = (json as List).whereType<String>().toSet();
+    return TempleFeatures(
+      tabs: {
+        for (final tab in TempleTab.values)
+          if (names.contains('tab.${tab.name}')) tab,
+      },
+      homeActions: {
+        for (final action in HomeAction.values)
+          if (names.contains('home.${action.name}')) action,
+      },
     );
   }
 }

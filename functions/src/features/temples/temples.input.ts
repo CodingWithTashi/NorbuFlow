@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import { noControlChars } from '../../core/validation';
 import { cardTemplates, standardTemplate } from '../cards';
+import { templeFeatures } from './temple';
 
 // These requests come from the operator's terminal, not the app, so each
 // message says in words what is wrong instead of naming a `ValidationIssue`.
@@ -83,6 +84,17 @@ export const templeLogoInput = z.object({
     .instanceof(Buffer, { error: 'Send the image file as the body of the request.' })
     .refine((image) => image.length > 0, 'Send the image file as the body of the request.')
     .refine((image) => image.length <= maxLogoBytes, 'The image is larger than 5 MB.'),
+});
+
+/** What `temples-setFeatures` takes: everything the temple's app shows, each once. */
+export const templeFeaturesInput = z.object({
+  templeId,
+  features: z
+    .array(
+      z.enum(templeFeatures, `One of: ${templeFeatures.join(', ')}.`),
+      'Send a list, such as ["tab.members", "home.addMember"].',
+    )
+    .transform((features) => [...new Set(features)]),
 });
 
 /** What `temples-addAdmin` takes. */

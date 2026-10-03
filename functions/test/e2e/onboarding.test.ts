@@ -48,6 +48,7 @@ describe('registering a temple', () => {
       cardTemplate: 'standard',
       membership: { kind: 'rolling', months: 12 },
       hasLogo: false,
+      features: ['home.addMember', 'home.letter', 'tab.members'],
     });
     expect(again.status).toBe(409);
     expect(again.body.error).toMatchObject({ kind: 'conflict', reason: 'templeExists' });
@@ -68,6 +69,25 @@ describe('registering a temple', () => {
     expect(stored.body.temple).toMatchObject({ id: templeId, hasLogo: true });
     expect(nowhere.status).toBe(404);
     expect(notAPicture.status).toBe(400);
+  });
+
+  it('is told which tabs and Home cards its app shows', async () => {
+    const features = ['tab.members', 'tab.calendar', 'home.addMember', 'home.volunteers'];
+
+    const set = await operate('temples-setFeatures', { templeId, features });
+    const unknown = await operate('temples-setFeatures', { templeId, features: ['tab.home'] });
+    const nowhere = await operate('temples-setFeatures', { templeId: 'no-such-temple', features });
+    const guessed = await operate('temples-setFeatures', { templeId, features }, 'a-guess');
+
+    expect(set.status, JSON.stringify(set.body)).toBe(200);
+    expect(set.body.temple).toMatchObject({
+      id: templeId,
+      features: ['home.addMember', 'home.volunteers', 'tab.calendar', 'tab.members'],
+    });
+    expect(unknown.status).toBe(400);
+    expect(Object.keys(unknown.body.error.fields)).toEqual(['features.0']);
+    expect(nowhere.status).toBe(404);
+    expect(guessed.status).toBe(401);
   });
 
   it('assigns it to its admin, who then has an account to sign in to', async () => {
@@ -108,6 +128,7 @@ describe('the admin’s first day', () => {
         description: 'Kagyu tradition · Vancouver',
         role: 'admin',
         logo: expect.any(String),
+        features: ['home.addMember', 'home.volunteers', 'tab.calendar', 'tab.members'],
       },
     ]);
     // A PNG, as the app shows it.

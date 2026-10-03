@@ -276,8 +276,8 @@ functions/assets/           # fonts/ (shared); temples/<temple id>/<document>/ a
 ```
 
 Features: `auth` (`auth-checkEmail`, `auth-startSession`), `temples` (who works where, and in
-what role: `temples-list` for the app; `temples-create`, `-setLogo` and
-`-addAdmin` for the operator), `members` (`members-list`, `-card`, `-preview`,
+what role: `temples-list` for the app; `temples-create`, `-setLogo`,
+`-addAdmin` and `-setFeatures` for the operator), `members` (`members-list`, `-card`, `-preview`,
 `-create`, `-update`), `cards` (the renderer; it has no functions of its own).
 
 - A function exported as `auth.startSession` deploys as `auth-startSession`,
@@ -315,6 +315,11 @@ what role: `temples-list` for the app; `temples-create`, `-setLogo` and
 - **Sign-in is for added emails only.** `temples-addAdmin` puts an email on
   a temple's team and gives it a Firebase Authentication account. Nothing is
   emailed: the person asks for a link in the app.
+- **What a temple shows** is its rows in `temple_features` (`tab.members`,
+  `home.addMember`), sent with `temples-list` and set with
+  `temples-setFeatures`. Home and More are always shown; a Home card needs
+  the role to have it too. The app reads them as `Temple.features`, and
+  shows everything when the backend sends none (the fakes).
 - Libraries only some functions need (`pg`, the S3 client, `sharp`, `pdf-lib`)
   are loaded with `await import()` where they are used, so the rest start fast.
 - Throw `AppError.*` for anything the app should see. Everything else is

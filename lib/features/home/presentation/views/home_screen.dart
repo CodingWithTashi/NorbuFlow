@@ -29,7 +29,7 @@ class HomeScreen extends ConsumerWidget {
     final locale = ref.watch(localeProvider);
     final today = ref.watch(todayProvider);
     final tibetan = ref.watch(tibetanCalendarProvider).dayOf(today);
-    final role = ref.watch(homeRoleProvider);
+    final actions = ref.watch(homeActionsProvider);
     final name = ref.watch(
       authViewModelProvider.select((auth) => auth.user?.displayName ?? ''),
     );
@@ -73,7 +73,7 @@ class HomeScreen extends ConsumerWidget {
             minItemWidth: 164,
             maxColumns: 4,
             children: [
-              for (final action in role.homeActions)
+              for (final action in actions)
                 ActionTile(
                   icon: action.icon,
                   title: action.label(l10n),

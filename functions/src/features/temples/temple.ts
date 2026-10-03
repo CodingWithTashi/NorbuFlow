@@ -11,6 +11,41 @@ export const roles = [
 
 export type Role = (typeof roles)[number];
 
+/**
+ * What a temple can switch on: a tab, or a Home card. After the dot are the
+ * app's `TempleTab` and `HomeAction` values. Home and More are always shown.
+ */
+export const templeFeatures = [
+  'tab.members',
+  'tab.offerings',
+  'tab.calendar',
+  'home.addMember',
+  'home.renew',
+  'home.donate',
+  'home.receipt',
+  'home.checkIn',
+  'home.volunteers',
+  'home.announce',
+  'home.assign',
+  'home.letter',
+  'home.hours',
+  'home.reports',
+  'home.tax',
+  'home.team',
+  'home.prayers',
+  'home.pujaRequests',
+  'home.calendar',
+  'home.approve',
+  'home.plan',
+  'home.myShifts',
+  'home.myCard',
+] as const;
+
+export type TempleFeature = (typeof templeFeatures)[number];
+
+/** What a temple starts with: the parts that are ready. */
+export const defaultFeatures: TempleFeature[] = ['tab.members', 'home.addMember', 'home.letter'];
+
 /** How long a membership runs. */
 export type MembershipTerm =
   /** Every membership ends on the same day of the year. */
@@ -31,6 +66,8 @@ export interface Temple {
   membershipTerm: MembershipTerm;
   /** Where its logo is in the file store, once it has one. */
   logoKey: string | null;
+  /** What its app shows, by name. */
+  features: TempleFeature[];
 }
 
 /** A temple being registered. */
@@ -55,6 +92,9 @@ export interface TempleRepository {
   create(temple: NewTemple): Promise<boolean>;
 
   setLogo(id: string, logoKey: string): Promise<void>;
+
+  /** Replaces what the temple's app shows with `features`. */
+  setFeatures(id: string, features: TempleFeature[]): Promise<void>;
 
   /** Puts `email` on the temple's team as `role`, or changes their role. */
   addStaff(templeId: string, email: string, role: Role): Promise<void>;

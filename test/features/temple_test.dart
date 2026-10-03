@@ -16,9 +16,11 @@ import 'package:norbu_flow/features/auth/data/fake_auth_repository.dart';
 import 'package:norbu_flow/features/auth/presentation/view_models/auth_view_model.dart';
 import 'package:norbu_flow/features/offerings/presentation/view_models/offering_providers.dart';
 import 'package:norbu_flow/features/offerings/presentation/view_models/puja_view_model.dart';
+import 'package:norbu_flow/features/temple/data/fake_temple_repository.dart';
 import 'package:norbu_flow/features/temple/data/firebase_temple_repository.dart';
 import 'package:norbu_flow/features/temple/data/temple_repositories.dart';
 import 'package:norbu_flow/features/temple/domain/role.dart';
+import 'package:norbu_flow/features/temple/domain/temple_features.dart';
 import 'package:norbu_flow/features/temple/presentation/view_models/team_view_model.dart';
 import 'package:norbu_flow/features/temple/presentation/view_models/temple_session.dart';
 import 'package:norbu_flow/features/volunteers/presentation/view_models/assign_view_model.dart';
@@ -43,6 +45,7 @@ void main() {
             'description': 'Kagyu tradition · Vancouver',
             'role': 'admin',
             'logo': base64Encode(frontPage),
+            'features': ['tab.members', 'home.addMember', 'home.letter'],
           },
           <Object?, Object?>{
             'id': 'drepung-loseling-canada',
@@ -74,6 +77,47 @@ void main() {
       expect(temple.monogram, 'DL');
       expect((temple.logo! as MemoryPhoto).bytes, frontPage);
       expect(memberships.last.temple.logo, isNull);
+    });
+
+    test('shows the tabs and Home cards the backend says each temple shows, '
+        'and everything when it says nothing', () async {
+      final [drolma, loseling] = await repository.fetchMemberships('uid-lama');
+
+      final shown = drolma.temple.features;
+      expect(TempleTab.values.where(shown.shows), [TempleTab.members]);
+      expect(HomeAction.values.where(shown.showsHome), [
+        HomeAction.addMember,
+        HomeAction.letter,
+      ]);
+      final everything = loseling.temple.features;
+      expect(TempleTab.values.every(everything.shows), isTrue);
+      expect(HomeAction.values.every(everything.showsHome), isTrue);
+    });
+
+    test('skips newer names, and anything that is not a name', () async {
+      backend.response = {
+        'temples': <Object?>[
+          <Object?, Object?>{
+            'id': 'drolma-ling-centre',
+            'name': 'Drolma Ling Centre',
+            'description': '',
+            'role': 'admin',
+            'logo': null,
+            'features': <Object?>[
+              'tab.calendar',
+              'tab.library',
+              'home.bless',
+              null,
+            ],
+          },
+        ],
+      };
+
+      final [drolma] = await repository.fetchMemberships('uid-lama');
+
+      final shown = drolma.temple.features;
+      expect(TempleTab.values.where(shown.shows), [TempleTab.calendar]);
+      expect(HomeAction.values.where(shown.showsHome), isEmpty);
     });
 
     test('says so when no temple was assigned to them', () async {
@@ -214,6 +258,42 @@ void main() {
 
       expect(container.read(currentTempleIdProvider), isNull);
       expect(container.read(rolePreviewProvider), isNull);
+    });
+
+    test("Home shows the role's cards that the temple has on, for a "
+        'previewed role too', () async {
+      final container = await createSignedInContainer(
+        overrides: [
+          currentTempleProvider.overrideWith(
+            (ref) => FakeTemples.all.first.copyWith(
+              features: const TempleFeatures(
+                tabs: {TempleTab.members},
+                homeActions: {
+                  HomeAction.letter,
+                  HomeAction.addMember,
+                  HomeAction.tax,
+                },
+              ),
+            ),
+          ),
+        ],
+      );
+      expect(container.read(homeActionsProvider), [
+        HomeAction.addMember,
+        HomeAction.letter,
+      ]);
+
+      final preview = container.read(rolePreviewProvider.notifier);
+      preview.preview(Role.coordinator);
+      expect(container.read(homeActionsProvider), [HomeAction.letter]);
+      preview.preview(Role.geshe);
+      expect(container.read(homeActionsProvider), isEmpty);
+    });
+
+    test('Home shows all of the role\'s cards in the demo', () async {
+      final container = await createSignedInContainer();
+
+      expect(container.read(homeActionsProvider), Role.admin.homeActions);
     });
   });
 

@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../../../core/models/photo_source.dart';
 import '../../../core/theme/accent_preset.dart';
 import 'role.dart';
+import 'temple_features.dart';
 
 /// A temple's portal: the details printed on its ID cards and receipts.
 @immutable
@@ -19,6 +20,7 @@ class Temple {
     required this.address,
     required this.signatory,
     this.logo,
+    this.features = const TempleFeatures.all(),
   });
 
   final String id;
@@ -39,6 +41,9 @@ class Temple {
   final String signatory;
   final PhotoSource? logo;
 
+  /// What its app shows.
+  final TempleFeatures features;
+
   Temple copyWith({
     String? nameEn,
     String? nameBo,
@@ -48,6 +53,7 @@ class Temple {
     String? address,
     String? signatory,
     PhotoSource? logo,
+    TempleFeatures? features,
   }) {
     return Temple(
       id: id,
@@ -61,6 +67,7 @@ class Temple {
       address: address ?? this.address,
       signatory: signatory ?? this.signatory,
       logo: logo ?? this.logo,
+      features: features ?? this.features,
     );
   }
 }

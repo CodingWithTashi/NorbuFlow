@@ -15,6 +15,7 @@ import { TempleAccess } from '../../../src/features/temples/temple-access';
 import {
   newTempleInput,
   templeAdminInput,
+  templeFeaturesInput,
   templeLogoInput,
 } from '../../../src/features/temples/temples.input';
 import {
@@ -41,6 +42,7 @@ describe('temples', () => {
   let database: Database;
   let files: InMemoryFileStore;
   let accounts: RecordingAccounts;
+  let repository: PostgresTempleRepository;
   let temples: TempleService;
   let access: TempleAccess;
 
@@ -63,7 +65,7 @@ describe('temples', () => {
     database = await freshDatabase();
     files = new InMemoryFileStore();
     accounts = new RecordingAccounts();
-    const repository = new PostgresTempleRepository(database);
+    repository = new PostgresTempleRepository(database);
     access = new TempleAccess(repository);
     temples = new TempleService(repository, access, files, accounts, templeNameProblem);
     return () => database.close();
@@ -81,6 +83,7 @@ describe('temples', () => {
         cardTemplate: 'standard',
         membershipTerm: { kind: 'rolling', months: 12 },
         logoKey: null,
+        features: ['home.addMember', 'home.letter', 'tab.members'],
       });
       const [saved] = await database.query(
         `select name, description, time_zone, card_template, membership_term, membership_months,
@@ -303,6 +306,55 @@ describe('temples', () => {
     });
   });
 
+  describe('what its app shows', () => {
+    it('starts as members, Add a Member and Volunteer Letter, for a new temple and the first', async () => {
+      await temples.create(drolmaLing());
+      await addToTeam(database, lama.email, 'admin', 'drolma-ling-centre');
+      await addToTeam(database, lama.email, 'frontDesk');
+
+      const listed = await temples.templesOf(lama);
+
+      expect(listed.map(({ temple }) => [temple.id, temple.features])).toEqual([
+        ['drepung-loseling-canada', ['home.addMember', 'home.letter', 'tab.members']],
+        ['drolma-ling-centre', ['home.addMember', 'home.letter', 'tab.members']],
+      ]);
+    });
+
+    it('is replaced as a whole, and is the same however often it is sent', async () => {
+      const features = ['tab.offerings', 'home.donate', 'home.receipt'] as const;
+
+      await temples.setFeatures(loseling, [...features]);
+      const temple = await temples.setFeatures(loseling, [...features]);
+
+      expect(temple.features).toEqual(['home.donate', 'home.receipt', 'tab.offerings']);
+      expect((await repository.find(loseling))?.features).toEqual(temple.features);
+    });
+
+    it('can be nothing but Home and More', async () => {
+      const temple = await temples.setFeatures(loseling, []);
+
+      expect(temple.features).toEqual([]);
+    });
+
+    it('is for one temple only', async () => {
+      await temples.create(drolmaLing());
+
+      await temples.setFeatures('drolma-ling-centre', ['tab.calendar']);
+
+      expect((await repository.find(loseling))?.features).toEqual([
+        'home.addMember',
+        'home.letter',
+        'tab.members',
+      ]);
+    });
+
+    it('needs a temple that exists', async () => {
+      await expect(temples.setFeatures('no-such-temple', ['tab.members'])).rejects.toMatchObject({
+        kind: 'notFound',
+      });
+    });
+  });
+
   describe('the temples someone works at', () => {
     it('are theirs alone, each with its role and logo', async () => {
       await temples.create(drolmaLing());
@@ -470,6 +522,34 @@ describe('what the temple functions accept', () => {
     expect(refusedBy(templeLogoInput, { templeId: 'drolma-ling', logo: 'iVBORw0KGgo=' })).toEqual([
       'logo',
     ]);
+  });
+
+  it('takes what the app shows by name, each once, and says which names there are', () => {
+    expect(
+      parseInput(templeFeaturesInput, {
+        templeId: 'drolma-ling',
+        features: ['tab.members', 'home.letter', 'tab.members'],
+      }),
+    ).toEqual({ templeId: 'drolma-ling', features: ['tab.members', 'home.letter'] });
+    expect(parseInput(templeFeaturesInput, { templeId: 'drolma-ling', features: [] })).toEqual({
+      templeId: 'drolma-ling',
+      features: [],
+    });
+
+    expect(refusedBy(templeFeaturesInput, { templeId: 'drolma-ling' })).toEqual(['features']);
+    expect(
+      refusedBy(templeFeaturesInput, { templeId: 'drolma-ling', features: 'tab.members' }),
+    ).toEqual(['features']);
+    try {
+      parseInput(templeFeaturesInput, { templeId: 'drolma-ling', features: ['tab.home'] });
+      expect.unreachable();
+    } catch (error) {
+      const fields = (error as { details: { fields: Record<string, string> } }).details.fields;
+      expect(Object.keys(fields)).toEqual(['features.0']);
+      expect(fields['features.0']).toMatch(
+        /^One of: tab\.members, tab\.offerings, .*home\.myCard\.$/,
+      );
+    }
   });
 
   it('takes an admin’s email however it is capitalised, but not half an address', () => {

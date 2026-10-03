@@ -7,7 +7,12 @@ import { FirebaseAccounts } from './firebase-accounts';
 import { PostgresTempleRepository } from './postgres-temple.repository';
 import type { Temple } from './temple';
 import { TempleAccess } from './temple-access';
-import { newTempleInput, templeAdminInput, templeLogoInput } from './temples.input';
+import {
+  newTempleInput,
+  templeAdminInput,
+  templeFeaturesInput,
+  templeLogoInput,
+} from './temples.input';
 import { TempleService } from './temples.service';
 
 export type { TempleAccess } from './temple-access';
@@ -37,6 +42,7 @@ const registered = (temple: Temple) => ({
   cardTemplate: temple.cardTemplate,
   membership: temple.membershipTerm,
   hasLogo: temple.logoKey !== null,
+  features: temple.features,
 });
 
 /** `temples-create`: registers a temple. For the operator, not the app. */
@@ -58,6 +64,15 @@ export const setLogo = defineAdminEndpoint({
   handler: async ({ templeId, logo }) => {
     const temples = await service();
     return { temple: registered(await temples.setLogo(templeId, logo)) };
+  },
+});
+
+/** `temples-setFeatures`: the tabs and Home cards the temple's app shows. */
+export const setFeatures = defineAdminEndpoint({
+  input: templeFeaturesInput,
+  handler: async ({ templeId, features }) => {
+    const temples = await service();
+    return { temple: registered(await temples.setFeatures(templeId, features)) };
   },
 });
 
@@ -83,6 +98,7 @@ export const list = defineCallable({
         description: temple.description,
         role,
         logo: logo ? Buffer.from(logo).toString('base64') : null,
+        features: temple.features,
       })),
     };
   },

@@ -5,7 +5,14 @@ import { AppError } from '../../core/errors';
 import type { FileStore } from '../../core/file-store';
 import type { NameProblem } from '../cards';
 import type { Accounts } from './accounts';
-import type { MembershipTerm, Role, Temple, TempleRepository } from './temple';
+import {
+  defaultFeatures,
+  type MembershipTerm,
+  type Role,
+  type Temple,
+  type TempleFeature,
+  type TempleRepository,
+} from './temple';
 import type { TempleAccess } from './temple-access';
 import { prepareLogo } from './temple-logo';
 
@@ -55,18 +62,15 @@ export class TempleService {
       throw AppError.invalid({ name: 'Too long for the standard card, which has two lines.' });
     }
 
-    const temple: Temple = {
+    const { next, prefix, minDigits } = request.memberNumber;
+    const added = await this.temples.create({
       id,
       name: request.name,
       description: request.description,
       timeZone: request.timeZone,
       cardTemplate: request.cardTemplate,
       membershipTerm: request.membership,
-      logoKey: null,
-    };
-    const { next, prefix, minDigits } = request.memberNumber;
-    const added = await this.temples.create({
-      ...temple,
+      features: defaultFeatures,
       memberNumber: { next: String(next), prefix, minDigits },
     });
     if (!added) {
@@ -77,7 +81,14 @@ export class TempleService {
         'templeExists',
       );
     }
-    return temple;
+    return this.existing(id);
+  }
+
+  /** Replaces what the temple's app shows with `features`. */
+  async setFeatures(templeId: string, features: TempleFeature[]): Promise<Temple> {
+    const temple = await this.existing(templeId);
+    await this.temples.setFeatures(temple.id, features);
+    return this.existing(temple.id);
   }
 
   /** Replaces the temple's logo with `image`. Earlier logos stay in the file store. */
