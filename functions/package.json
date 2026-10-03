@@ -19,7 +19,8 @@
     "deploy": "firebase deploy --only functions",
     "logs": "firebase functions:log",
     "db:migrate": "npm run build && node --env-file-if-exists=.env lib/cli/db.js migrate",
-    "db:staff": "npm run build && node --env-file-if-exists=.env lib/cli/db.js staff"
+    "db:staff": "npm run build && node --env-file-if-exists=.env lib/cli/db.js staff",
+    "db:import": "npm run build && node --env-file-if-exists=.env lib/cli/db.js import"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1145.0",

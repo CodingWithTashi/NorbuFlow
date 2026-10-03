@@ -33,6 +33,8 @@ npm run deploy           # needs the Blaze plan. Ask before deploying.
 # These act on the database named in functions/.env:
 npm run db:migrate       # applies functions/migrations/*.sql that have not run
 npm run db:staff -- <temple-id> <email> <role>   # puts someone on a temple's team
+npm run db:import -- <temple-id> <email> <folder> [--check]   # members of hand-made cards,
+                         #   from <folder>/manifest.json; --check saves nothing, draws the cards
 ```
 
 A temple is registered, and assigned to its admin, with the three requests in

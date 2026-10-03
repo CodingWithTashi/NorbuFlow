@@ -190,7 +190,8 @@ export function drawCentred(
   baseline: number,
 ): void {
   const margin = (style.width - widthOf(fonts, style, text)) / 2;
-  const x = style.x + Math.floor(margin / style.snap) * style.snap;
+  // Canva rounds a start a hundredth of a step short up, as on "Tsering Youdon".
+  const x = style.x + Math.floor(margin / style.snap + 0.01) * style.snap;
   draw(page, fonts, style, text, x, baseline);
 }
 

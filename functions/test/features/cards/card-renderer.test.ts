@@ -68,6 +68,13 @@ describe('the Drepung Loseling Canada card', () => {
     ]);
   });
 
+  it('centres a name a hair short of the next grid step where Canva does', async () => {
+    const front = await textOn(await card('Tsering Youdon'), 1);
+
+    // Where the temple's own Canva card has it.
+    expect(front[1]).toMatchObject({ text: 'Tsering Youdon', x: 46.373 });
+  });
+
   it('wraps a long name onto a second line and moves the validity down', async () => {
     const front = await textOn(await card('Tsering Yangzom Wangmo'), 1);
 

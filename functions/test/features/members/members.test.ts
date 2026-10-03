@@ -574,6 +574,101 @@ describe('members', () => {
     });
   });
 
+  describe('a member whose card was made by hand', () => {
+    // The temple's Canva cards: bought for the year to 31 July 2026.
+    const handMade = {
+      joinedOn: { year: 2025, month: 8, day: 1 },
+      renewedOn: { year: 2025, month: 8, day: 1 },
+      expiresOn: { year: 2026, month: 7, day: 31 },
+    };
+
+    const card = (changes: Partial<NewMemberRequest> = {}) => ({
+      ...tenzin({ email: undefined, phone: undefined }),
+      number: '194915185',
+      ...changes,
+    });
+
+    const addExisting = async (request = card()) => {
+      const result = await service().addExisting(dolma, request, handMade);
+      if ('taken' in result) throw new Error(`${result.taken.name} has that number.`);
+      return result;
+    };
+
+    it('is added with its number and dates, on a card that carries them', async () => {
+      const { member, pdf } = await addExisting();
+
+      expect(member).toMatchObject({ number: '194915185', email: null, phone: null, ...handMade });
+      expect(await printedOn(pdf)).toEqual([
+        'Drepung Loseling Canada',
+        'Tenzin Dolma',
+        'Valid: 2026-July-31',
+        'Membership number',
+        '194915185',
+      ]);
+    });
+
+    it('keeps a record of the card with those dates', async () => {
+      const request = card();
+      const { member } = await addExisting(request);
+
+      const [saved] = await database.query(
+        `select id, number, valid_from::text, valid_until::text, issued_by
+           from member_cards where temple_id = $1 and member_id = $2`,
+        [loseling, member.id],
+      );
+      expect(saved).toEqual({
+        id: request.id,
+        number: '194915185',
+        valid_from: '2025-08-01',
+        valid_until: '2026-07-31',
+        issued_by: 'uid-dolma',
+      });
+    });
+
+    it('leaves the count alone, so the next new member gets the next number', async () => {
+      await addExisting(card({ number: '194915307' }));
+
+      const { member } = await add();
+
+      expect(member.number).toBe('194915308');
+    });
+
+    it('asked again, adds nobody new', async () => {
+      const request = card();
+      const first = await addExisting(request);
+
+      const again = await addExisting(request);
+
+      expect(again.member).toEqual(first.member);
+      expect(await count('members')).toBe(1);
+      expect(await count('member_cards')).toBe(1);
+    });
+
+    it('is turned away when someone holds its number, even asked to replace them', async () => {
+      await add(tenzin({ number: '194915185' }));
+
+      const result = await service().addExisting(
+        dolma,
+        card({ name: 'Karma Dhondup', replace: true }),
+        handMade,
+      );
+
+      expect(result).toMatchObject({ taken: { name: 'Tenzin Dolma' } });
+      expect(await count('members')).toBe(1);
+    });
+
+    it('is previewed with the card’s last day', async () => {
+      const { pdf } = await service().preview(dolma, {
+        name: 'Tenzin Dolma',
+        photo: portrait,
+        number: '194915185',
+        validUntil: handMade.expiresOn,
+      });
+
+      expect(await printedOn(pdf)).toContain('Valid: 2026-July-31');
+    });
+  });
+
   describe('previewing a card', () => {
     const previewOf = (changes: Record<string, unknown> = {}) =>
       service().preview(dolma, { name: 'Tenzin Dolma', photo: portrait, ...changes });

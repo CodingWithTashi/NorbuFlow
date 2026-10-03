@@ -45,6 +45,8 @@ export interface PreviewCardRequest {
   photo?: Uint8Array;
   number?: string;
   templeId?: string;
+  /** A new member's last day, from a card made before NorbuFlow. Left out, one bought today. */
+  validUntil?: CalendarDate;
 }
 
 export interface UpdateMemberRequest extends MemberDetails {
@@ -53,6 +55,13 @@ export interface UpdateMemberRequest extends MemberDetails {
   photo?: Uint8Array;
   /** The digits of a new number. Left out, they keep the one they have. */
   number?: string;
+}
+
+/** When a membership began, when it was last bought or renewed, and its last day. */
+export interface MembershipDates {
+  joinedOn: CalendarDate;
+  renewedOn: CalendarDate;
+  expiresOn: CalendarDate;
 }
 
 /** A member as saved, with their print-ready card: front, then back. */
@@ -118,7 +127,9 @@ export class MemberService {
     } else {
       if (!request.photo) throw AppError.invalid({ photo: 'photoRequired' });
       photo = await cardPhoto(renderer, request.photo);
-      validUntil = membershipEnd(temple.membershipTerm, todayIn(temple.timeZone, this.now()));
+      validUntil =
+        request.validUntil ??
+        membershipEnd(temple.membershipTerm, todayIn(temple.timeZone, this.now()));
     }
 
     const number = await this.members.numberFor(temple.id, digits);
@@ -130,7 +141,27 @@ export class MemberService {
    * Adds a member and prints their card; the membership starts today. A
    * typed number someone holds adds nothing unless `replace`.
    */
-  async create(caller: Caller, request: NewMemberRequest): Promise<IssuedCard | NumberTaken> {
+  create(caller: Caller, request: NewMemberRequest): Promise<IssuedCard | NumberTaken> {
+    return this.add(caller, request);
+  }
+
+  /**
+   * Adds a member who already holds a card made before NorbuFlow, with that
+   * card's number and dates. A number someone holds adds nothing.
+   */
+  addExisting(
+    caller: Caller,
+    request: NewMemberRequest & { number: string },
+    dates: MembershipDates,
+  ): Promise<IssuedCard | NumberTaken> {
+    return this.add(caller, { ...request, replace: false }, dates);
+  }
+
+  private async add(
+    caller: Caller,
+    request: NewMemberRequest,
+    dates?: MembershipDates,
+  ): Promise<IssuedCard | NumberTaken> {
     const temple = await this.access.templeFor(caller, request.templeId, mayAddMembers);
 
     // Everything that could stop the card printing is checked before a
@@ -138,7 +169,11 @@ export class MemberService {
     const { renderer, name } = await this.printable(temple, request.name);
     const photo = await cardPhoto(renderer, request.photo);
     const today = todayIn(temple.timeZone, this.now());
-    const expiresOn = membershipEnd(temple.membershipTerm, today);
+    const { joinedOn, renewedOn, expiresOn } = dates ?? {
+      joinedOn: today,
+      renewedOn: today,
+      expiresOn: membershipEnd(temple.membershipTerm, today),
+    };
 
     const saved = await this.members.save(
       {
@@ -147,8 +182,8 @@ export class MemberService {
         name,
         email: request.email || null,
         phone: request.phone || null,
-        joinedOn: today,
-        renewedOn: today,
+        joinedOn,
+        renewedOn,
         expiresOn,
         createdBy: caller.uid,
       },

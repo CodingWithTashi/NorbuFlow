@@ -1,10 +1,13 @@
 // Database chores for the database named in `functions/.env`:
-// `npm run db:migrate` and `npm run db:staff -- <temple-id> <email> <role>`.
+// `npm run db:migrate`, `npm run db:staff -- <temple-id> <email> <role>` and
+// `npm run db:import -- <temple-id> <email> <folder> [--check]`.
 import { openPostgres } from '../core/database';
 import { setting } from '../core/environment';
 import { migrate } from '../core/migrations';
 import { PostgresTempleRepository } from '../features/temples/postgres-temple.repository';
 import { type Role, roles } from '../features/temples/temple';
+import { fileStore } from '../runtime';
+import { importMembers } from './import-members';
 
 async function main(): Promise<void> {
   const [command, ...args] = process.argv.slice(2);
@@ -21,8 +24,19 @@ async function main(): Promise<void> {
       const temples = new PostgresTempleRepository(database);
       await temples.addStaff(templeId, email.trim().toLowerCase(), role as Role);
       console.log(`${email} is now ${role} at ${templeId}.`);
+    } else if (command === 'import') {
+      const [templeId, email, folder, flag] = args;
+      if (!templeId || !email || !folder || (flag && flag !== '--check')) {
+        throw new Error('Usage: db:import -- <temple-id> <email> <folder> [--check]');
+      }
+      await importMembers(database, await fileStore(), {
+        templeId,
+        email: email.trim().toLowerCase(),
+        folder,
+        check: flag === '--check',
+      });
     } else {
-      throw new Error('Commands: migrate, staff');
+      throw new Error('Commands: migrate, staff, import');
     }
   } finally {
     await database.close();
