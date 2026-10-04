@@ -201,6 +201,7 @@
 				97C146EC1CF9000F007C117D /* Resources */,
 				9705A1C41CF9048500538489 /* Embed Frameworks */,
 				3B06AD1E1E4923F5004D2608 /* Thin Binary */,
+				5D0C0FFE2E9A4B7100D5A11C /* Native Assets dSYMs */,
 				E6BD4F8FBF7E56B8E79C0057 /* [CP] Embed Pods Frameworks */,
 				4DB29C9C34696E5F64C13758 /* [CP] Copy Pods Resources */,
 			);
@@ -328,6 +329,21 @@
 			shellPath = /bin/sh;
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-resources.sh\"\n";
 			showEnvVarsInLog = 0;
+		};
+		5D0C0FFE2E9A4B7100D5A11C /* Native Assets dSYMs */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Native Assets dSYMs";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Flutter builds the frameworks of Dart packages with native code (objective_c)\n# without the dSYM App Store Connect asks for. This makes it from the framework.\n[ \"$DEBUG_INFORMATION_FORMAT\" = \"dwarf-with-dsym\" ] || exit 0\nfor built in \"$FLUTTER_APPLICATION_PATH/$FLUTTER_BUILD_DIR/native_assets/ios\"/*.framework; do\n  name=$(basename \"$built\" .framework)\n  binary=\"$TARGET_BUILD_DIR/$FRAMEWORKS_FOLDER_PATH/$name.framework/$name\"\n  [ -f \"$binary\" ] || continue\n  xcrun dsymutil \"$binary\" -o \"$DWARF_DSYM_FOLDER_PATH/$name.framework.dSYM\" ||\n    echo \"warning: no dSYM was made for $name.framework\"\ndone\n";
 		};
 		9740EEB61CF901F6004384FC /* Run Script */ = {
 			isa = PBXShellScriptBuildPhase;

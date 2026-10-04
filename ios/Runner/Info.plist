@@ -27,6 +27,9 @@
 	<!-- Sign-in links are read by the app itself (app_links), not routed by Flutter. -->
 	<key>FlutterDeepLinkingEnabled</key>
 	<false/>
+	<!-- The app's only encryption is HTTPS, so App Store Connect need not ask for each build. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>

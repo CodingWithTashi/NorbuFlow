@@ -46,3 +46,11 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# The release keystore CI decodes from a secret; keep real ones out of git too.
+*.jks
+
+# fastlane run output (fastlane/Fastfile).
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/test_output
