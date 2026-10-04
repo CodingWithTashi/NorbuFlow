@@ -73,6 +73,20 @@ dev_dependencies:
   url_launcher_platform_interface: ^2.3.2
   path_provider_platform_interface: ^2.1.3
   plugin_platform_interface: ^2.1.8
+  flutter_launcher_icons: ^0.14.4
+
+# The launcher icons in android/ and ios/ are written from these images by
+# `dart run flutter_launcher_icons`. Run it again after changing either image.
+flutter_launcher_icons:
+  image_path: assets/app-icon.png
+  android: true
+  ios: true
+  remove_alpha_ios: true
+  # Android cuts the icon to a shape of its own (a circle on a Pixel), which
+  # would go through the frame and the flag stripe. There it is the jewel alone
+  # on the same maroon.
+  adaptive_icon_background: "#7A1F2B"
+  adaptive_icon_foreground: assets/app-icon-foreground.png
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
