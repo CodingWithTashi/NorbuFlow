@@ -1,8 +1,9 @@
 # NorbuFlow
 
-Flutter app for Tibetan Buddhist temples: membership and ID cards, offerings and
-receipts, volunteer scheduling, announcements. Used at a front desk by people of
-all ages, in English and Tibetan, on phones and on tablets up to iPad landscape.
+Flutter app for Tibetan Buddhist temples: membership and ID cards, support
+letters, offerings and receipts, volunteer scheduling, announcements. Used at
+a front desk by people of all ages, in English and Tibetan, on phones and on
+tablets up to iPad landscape.
 
 The UI implements the design project "NorbuFlow Prototype v2"
 (claude.ai/design, project `9ef6cd89-8569-431e-995d-8f1e1acb4f91`). When a screen
@@ -74,9 +75,10 @@ hosting/                    # the page a sign-in link lands on outside the app
 ```
 
 Features: `auth`, `onboarding`, `temple` (temples, team, roles, settings), `home`,
-`members`, `offerings`, `volunteers`, `announcements`, `reports`, `settings`
-(app preferences), `outbox` (everything that leaves the app: send, print,
-export), `assistant` ("Improve wording").
+`members`, `letters` (support letters on a temple's letterhead), `offerings`,
+`volunteers`, `announcements`, `reports`, `settings` (app preferences),
+`outbox` (everything that leaves the app: send, print, export), `assistant`
+("Improve wording").
 
 ### Layer rules
 
@@ -137,6 +139,8 @@ Live, through Firebase and the `functions/` backend:
   flow (`CardRepository`): preview a card, issue it to a new member, change a
   member on file, fetch the card on file. Renewals, check-ins and the Add a
   Member wizard are not.
+- `letters`: all of it (`LetterRepository`): the list, the preview, issuing
+  a letter and fetching one on file.
 
 Every other repository is still an in-memory fake extending `FakeRepository`
 (`core/data/fake_repository.dart`), which simulates latency and guarantees that
@@ -167,9 +171,11 @@ member's photo on file. `PhotoImage` shows both, and keeps a fetched photo on
 the device under its file key: the signed link changes, the key does not.
 
 A finished PDF is printed or shared through `DocumentPrinter`
-(`core/services/document_printer.dart`): printed at the size of its own pages
-whatever paper is chosen, shared unchanged. `outbox` still simulates its print
-jobs; when its documents are real PDFs they go through the same service.
+(`core/services/document_printer.dart`): a card is printed at the size of its
+own pages whatever paper is chosen (`print`), a full page such as a letter is
+sent as the PDF it is and fitted to the paper (`printPage`), and both are
+shared unchanged. `outbox` still simulates its print jobs; when its documents
+are real PDFs they go through the same service.
 
 **An ID card on screen is the card itself, never a redrawing.** The backend's
 PDF is the only rendering of a temple's card; the app shows its pages
@@ -190,6 +196,26 @@ the request that was previewed. A membership number can be typed only on the
 preview. A number someone else holds comes back as
 `NumberTaken`, not as a failure: a new member may then replace that person's
 record; an edit may not.
+
+**A support letter** (`LetterFormViewModel`) follows the card form: what it
+says, Preview letter, the issued letter. Only admins have its Home card. The
+body is a `FormattedText` (`core/models`): text with bold, italic and
+underline ranges, and list lines that start with a bullet. It is edited in
+a `FormattedTextField`, which is Flutter's own text field with a styling
+controller, so a paste arrives as plain text and is then tidied
+(`FormattedText.fromPaste`). What is sent is its lines (`toLines`): a line
+break is a line break and an empty line prints as one. The backend may
+answer a preview with `LetterTooLong`, not a failure, and the form says how
+many lines over it is. On the preview a short letter can be moved down the
+page (Move up, Move down, Put it in the middle): each line down is an empty
+line before the first words of what is sent, and the preview says how many
+more there is room for (`LetterPreview.spare`). The letter number is typed
+only on the preview; one another letter carries comes back as
+`LetterNumberTaken`, and a letter never replaces another. A half-written
+letter is kept on the device per person and temple (`LetterDraftStore`) until
+it is issued. An issued letter never changes: its PDF, wording and page
+picture are kept by its id
+(`LetterFiles`).
 
 **Phone numbers** are typed in a `PhoneField`: a country, preselected from the
 SIM (`homePhoneCountryProvider`, set in `bootstrap`), and the number inside it.
@@ -280,7 +306,8 @@ functions/assets/           # fonts/ (shared); temples/<temple id>/<document>/ a
 Features: `auth` (`auth-checkEmail`, `auth-startSession`), `temples` (who works where, and in
 what role: `temples-list` for the app; `temples-create`, `-setLogo`,
 `-addAdmin` and `-setFeatures` for the operator), `members` (`members-list`, `-card`, `-preview`,
-`-create`, `-update`), `cards` (the renderer; it has no functions of its own).
+`-create`, `-update`), `cards` (the renderer; it has no functions of its own),
+`letters` (`letters-list`, `-get`, `-preview`, `-create`, and its own renderer).
 
 - A function exported as `auth.startSession` deploys as `auth-startSession`,
   which is the name the app passes to `Backend.call`.
@@ -375,6 +402,21 @@ what role: `temples-list` for the app; `temples-create`, `-setLogo`,
   them: the text must land on the same thousandth of a point. The renderer
   has no Firebase imports, so it can move to Cloud Run unchanged if rendering
   ever outgrows a function.
+- **A support letter is the temple's letterhead with three things set on it**:
+  its number, its last day and its body (`letters/letter-renderer.ts`,
+  `templates/<template>.ts`). `temples.letter_template` names the
+  letterhead; a temple without one issues no letters and has no `home.letter`.
+  Letters are counted by `temples.letter_number_next`, with the rules of
+  membership numbers, and a letter never replaces another. The body is laid
+  out in `text-layout.ts`: lines break between words, an empty line takes the
+  room of one, and a body with more lines than the template has room for is
+  answered as `{ tooLong }` by the preview. Empty lines before the first
+  words are kept: they are how far down the page the admin moved the letter,
+  and the preview answers with the lines still `spare`. pdf-lib places glyphs by their
+  widths alone, so the renderer writes the kerning itself; and it embeds
+  fonts whole, because pdf-lib's cut-down Roboto loses most of its letters.
+  The Drepung Loseling Canada body is Roboto 2.136 (hinted), which is the
+  exact file its designer used: another release has other widths.
 - **A temple with no design of its own prints the `standard` card**
   (`cards/templates/standard.ts`): NorbuFlow's layout, drawn in code, with
   the temple's name and logo. Every template keeps the same photo box, which

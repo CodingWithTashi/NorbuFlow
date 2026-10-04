@@ -7,6 +7,7 @@ import 'package:norbu_flow/app/router/app_routes.dart';
 import 'package:norbu_flow/core/config/app_config.dart';
 import 'package:norbu_flow/core/feedback/app_messenger.dart';
 import 'package:norbu_flow/core/services/document_printer.dart';
+import 'package:norbu_flow/core/services/file_cache.dart';
 import 'package:norbu_flow/features/members/presentation/view_models/members_view_model.dart';
 import 'package:norbu_flow/features/members/presentation/views/member_detail_view.dart';
 import 'package:norbu_flow/features/settings/domain/app_preferences.dart';
@@ -26,7 +27,9 @@ const _tabletLandscape = Size(1180, 820);
 /// Every in-app location, so layout problems anywhere fail a test.
 const _locations = [
   AppRoutes.home,
-  AppRoutes.letter,
+  AppRoutes.letters,
+  '/home/letters/new',
+  '/home/letters/letter-2026-09-25',
   AppRoutes.announce,
   AppRoutes.hours,
   AppRoutes.reports,
@@ -241,7 +244,7 @@ void main() {
       for (final shown in ['Home', 'Members', 'More', 'Add a Member']) {
         expect(find.text(shown), findsOneWidget, reason: shown);
       }
-      expect(find.text('Volunteer Letter'), findsOneWidget);
+      expect(find.text('Support letter'), findsOneWidget);
       for (final hidden in ['Offerings', 'Calendar', 'Record a Donation']) {
         expect(find.text(hidden), findsNothing, reason: hidden);
       }
@@ -328,8 +331,8 @@ const _loseling = TempleFeatures(
 String _shownPath(ProviderContainer container) =>
     container.read(routerProvider).routerDelegate.currentConfiguration.uri.path;
 
-/// The app, signed in. With [liveMembers], the members screens are the ones
-/// the backend has, on the fakes, and cards are drawn without a device.
+/// The app, signed in, drawing documents without a device. With
+/// [liveMembers], the members screens are the backend's, on the fakes.
 Future<ProviderContainer> _signedInApp(
   WidgetTester tester, {
   bool liveMembers = false,
@@ -343,10 +346,17 @@ Future<ProviderContainer> _signedInApp(
           ),
           overrides: [
             documentPrinterProvider.overrideWithValue(RecordingPrinter()),
+            fileCacheProvider.overrideWithValue(MemoryFileCache()),
             ...overrides,
           ],
         )
-      : createContainer(overrides: overrides);
+      : createContainer(
+          overrides: [
+            documentPrinterProvider.overrideWithValue(RecordingPrinter()),
+            fileCacheProvider.overrideWithValue(MemoryFileCache()),
+            ...overrides,
+          ],
+        );
   await tester.pumpApp(container);
   await tester.runAsync(() async {
     await signIn(container);

@@ -19,6 +19,9 @@ final backPage = base64Decode(
 /// share and draw, and draws every card as [frontPage] and [backPage].
 class RecordingPrinter implements DocumentPrinter {
   final printed = <String, Uint8List>{};
+
+  /// Full pages sent to the printer as they are: letters.
+  final printedPages = <String, Uint8List>{};
   final shared = <String, Uint8List>{};
   final drawn = <Uint8List>[];
   AppFailure? pagesFailure;
@@ -31,8 +34,19 @@ class RecordingPrinter implements DocumentPrinter {
   }
 
   @override
+  Future<List<Uint8List>> fullPages(Uint8List pdf) async {
+    if (pagesFailure case final failure?) throw failure;
+    drawn.add(pdf);
+    return [frontPage];
+  }
+
+  @override
   Future<void> print(Uint8List pdf, {required String name}) async =>
       printed[name] = pdf;
+
+  @override
+  Future<void> printPage(Uint8List pdf, {required String name}) async =>
+      printedPages[name] = pdf;
 
   @override
   Future<void> share(Uint8List pdf, {required String fileName}) async =>

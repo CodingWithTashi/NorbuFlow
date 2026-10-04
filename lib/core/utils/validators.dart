@@ -53,6 +53,12 @@ abstract final class Validators {
       ? null
       : ValidationIssue.memberNumberInvalid;
 
+  /// A letter number typed by hand: digits, above zero, at most fifteen.
+  static ValidationIssue? letterNumber(String value) =>
+      _memberNumber.hasMatch(value.trim())
+      ? null
+      : ValidationIssue.letterNumberInvalid;
+
   /// An optional contact that may be either an email or a phone number.
   static ValidationIssue? optionalContact(String value) {
     if (value.trim().isEmpty) return null;

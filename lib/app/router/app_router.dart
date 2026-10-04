@@ -10,6 +10,9 @@ import '../../features/auth/presentation/view_models/auth_view_model.dart';
 import '../../features/auth/presentation/views/check_email_screen.dart';
 import '../../features/auth/presentation/views/login_screen.dart';
 import '../../features/home/presentation/views/home_screen.dart';
+import '../../features/letters/presentation/views/letter_detail_view.dart';
+import '../../features/letters/presentation/views/letter_form_screen.dart';
+import '../../features/letters/presentation/views/letters_screen.dart';
 import '../../features/members/presentation/views/add_member_screen.dart';
 import '../../features/members/presentation/views/card_form_screen.dart';
 import '../../features/members/presentation/views/check_in_screen.dart';
@@ -34,7 +37,6 @@ import '../../features/temple/presentation/views/temple_settings_screen.dart';
 import '../../features/volunteers/presentation/views/assign_screen.dart';
 import '../../features/volunteers/presentation/views/calendar_screen.dart';
 import '../../features/volunteers/presentation/views/hours_screen.dart';
-import '../../features/volunteers/presentation/views/letter_screen.dart';
 import '../../features/volunteers/presentation/views/plan_screen.dart';
 import '../shell/app_shell.dart';
 import 'app_routes.dart';
@@ -94,10 +96,24 @@ final routerProvider = Provider<GoRouter>((ref) {
                 builder: (_, _) => const HomeScreen(),
                 routes: [
                   GoRoute(
-                    path: 'letter',
-                    builder: (_, state) => LetterScreen(
-                      volunteerId: state.uri.queryParameters['volunteer'],
-                    ),
+                    path: 'letters',
+                    builder: (_, _) => const LettersScreen(),
+                    routes: [
+                      // Before ':letterId' so "new" is not read as an id.
+                      GoRoute(
+                        path: 'new',
+                        builder: (_, state) => LetterFormScreen(
+                          name: state.uri.queryParameters['name'],
+                          like: state.uri.queryParameters['like'],
+                        ),
+                      ),
+                      GoRoute(
+                        path: ':letterId',
+                        builder: (_, state) => LetterDetailScreen(
+                          letterId: state.pathParameters['letterId']!,
+                        ),
+                      ),
+                    ],
                   ),
                   GoRoute(
                     path: 'announce',

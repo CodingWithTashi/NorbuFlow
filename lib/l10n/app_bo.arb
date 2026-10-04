@@ -46,7 +46,7 @@
   "actionVolunteers": "ཟླ་འདིའི་ཞབས་ཞུ་བ།",
   "actionAnnounce": "གསལ་བསྒྲགས།",
   "actionAssign": "ཞབས་ཞུའི་འགན་སྤྲོད།",
-  "actionLetter": "ཞབས་ཞུ་བའི་ཡི་གེ",
+  "actionLetter": "རྒྱབ་སྐྱོར་ཡི་གེ",
   "actionHours": "ཞབས་ཞུའི་ཆུ་ཚོད།",
   "actionReports": "སྙན་ཞུ།",
   "actionTax": "ལོ་མཇུག་འཛིན་ཤོག",
@@ -67,7 +67,7 @@
   "actionVolunteersSub": "This Month's Volunteers",
   "actionAnnounceSub": "Make an Announcement",
   "actionAssignSub": "Assign a Shift",
-  "actionLetterSub": "Volunteer Letter",
+  "actionLetterSub": "Support letter",
   "actionHoursSub": "Volunteer Hours",
   "actionReportsSub": "Reports",
   "actionTaxSub": "Year-end Tax Receipts",
@@ -89,6 +89,13 @@
   "commonPrint": "པར་སྐྲུན།",
   "commonEmail": "གློག་འཕྲིན།",
 
+  "formatBold": "སྦོམ་པོ།",
+  "formatItalic": "གསེག་མ།",
+  "formatUnderline": "འོག་ཐིག",
+  "formatList": "ཐོ།",
+  "formatPaste": "སྦྱར་བ།",
+  "formatDone": "ཚར་སོང་།",
+
   "receiptTitle": "ཞལ་འདེབས་འཛིན་ཤོག",
   "receiptFrom": "ཞལ་འདེབས་པ།",
   "receiptAmount": "དངུལ་འབོར།",
@@ -97,5 +104,12 @@
   "receiptNames": "སྨོན་ལམ་ཞུ་ཡུལ།",
   "receiptTax": "ཁྲལ་དོན་ཆེད་ཀྱི་འཛིན་ཤོག་ཚད་ལྡན།",
   "receiptThanks": "ཞལ་འདེབས་ལ་ཐུགས་རྗེ་ཆེ།",
-  "receiptSignature": "ལག་རྟགས།"
+  "receiptSignature": "ལག་རྟགས།",
+
+  "lettersTitle": "རྒྱབ་སྐྱོར་ཡི་གེ།",
+  "lettersNewCta": "ཡི་གེ་གསར་པ།",
+  "letterNewTitle": "རྒྱབ་སྐྱོར་ཡི་གེ་གསར་པ།",
+  "letterPreviewCta": "ཡི་གེར་སྔོན་ལྟ།",
+  "letterIssueCta": "ཡི་གེ་སྤྲོད།",
+  "letterPrint": "ཡི་གེ་པར་སྐྲུན།"
 }

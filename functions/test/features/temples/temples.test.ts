@@ -81,9 +81,10 @@ describe('temples', () => {
         description: 'Kagyu tradition · Vancouver',
         timeZone: 'America/Vancouver',
         cardTemplate: 'standard',
+        letterTemplate: null,
         membershipTerm: { kind: 'rolling', months: 12 },
         logoKey: null,
-        features: ['home.addMember', 'home.letter', 'tab.members'],
+        features: ['home.addMember', 'tab.members'],
       });
       const [saved] = await database.query(
         `select name, description, time_zone, card_template, membership_term, membership_months,
@@ -307,7 +308,7 @@ describe('temples', () => {
   });
 
   describe('what its app shows', () => {
-    it('starts as members, Add a Member and Volunteer Letter, for a new temple and the first', async () => {
+    it('starts as members and Add a Member; the first temple has its support letter too', async () => {
       await temples.create(drolmaLing());
       await addToTeam(database, lama.email, 'admin', 'drolma-ling-centre');
       await addToTeam(database, lama.email, 'frontDesk');
@@ -316,7 +317,7 @@ describe('temples', () => {
 
       expect(listed.map(({ temple }) => [temple.id, temple.features])).toEqual([
         ['drepung-loseling-canada', ['home.addMember', 'home.letter', 'tab.members']],
-        ['drolma-ling-centre', ['home.addMember', 'home.letter', 'tab.members']],
+        ['drolma-ling-centre', ['home.addMember', 'tab.members']],
       ]);
     });
 

@@ -95,6 +95,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonEmDash => '—';
 
   @override
+  String get formatBold => 'Bold';
+
+  @override
+  String get formatItalic => 'Italic';
+
+  @override
+  String get formatUnderline => 'Underline';
+
+  @override
+  String get formatList => 'List';
+
+  @override
+  String get formatPaste => 'Paste';
+
+  @override
+  String get formatDone => 'Done';
+
+  @override
   String get onboardingSkip => 'Skip';
 
   @override
@@ -318,7 +336,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get actionAssign => 'Assign a Shift';
 
   @override
-  String get actionLetter => 'Volunteer Letter';
+  String get actionLetter => 'Support letter';
 
   @override
   String get actionHours => 'Volunteer Hours';
@@ -378,7 +396,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get actionAssignSub => 'Fill open shifts';
 
   @override
-  String get actionLetterSub => 'Thanks, certificate';
+  String get actionLetterSub => 'Write and print';
 
   @override
   String get actionHoursSub => 'By person';
@@ -1321,39 +1339,228 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navMore => 'More';
 
   @override
-  String get letterTitle => 'Volunteer letter';
+  String get lettersTitle => 'Support letters';
 
   @override
-  String get letterIntro =>
-      'Pick a volunteer and a letter type. A draft is written for you to check and edit.';
+  String lettersCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count letters',
+      one: '1 letter',
+    );
+    return '$_temp0';
+  }
 
   @override
-  String get letterStepVolunteer => '1 · Volunteer';
+  String lettersFoundCount(Object count) {
+    return '$count found';
+  }
 
   @override
-  String get letterStepType => '2 · Type of letter';
+  String get lettersSearchHint => 'Search by name or number';
 
   @override
-  String get letterStepDraft => '3 · Draft';
+  String get lettersEmpty =>
+      'No letters yet. The first one you issue will show here.';
 
   @override
-  String get letterTypeThanks => 'Thank-you letter';
+  String lettersNoResults(Object query) {
+    return 'No letter matches “$query”.';
+  }
 
   @override
-  String get letterTypeThanksDesc => 'A warm thank-you for their service';
+  String get lettersNewCta => 'New letter';
 
   @override
-  String get letterTypeReference => 'Reference letter';
+  String get lettersSelectHint => 'Choose a letter to see it here.';
 
   @override
-  String get letterTypeReferenceDesc => 'For a job, school or visa application';
+  String letterNumber(Object number) {
+    return 'No. $number';
+  }
 
   @override
-  String get letterTypeCertificate => 'Certificate of service';
+  String letterRowSubtitle(Object number, Object date) {
+    return 'No. $number · Valid until $date';
+  }
 
   @override
-  String get letterTypeCertificateDesc =>
-      'Hours served this year, signed by the temple';
+  String get letterExpired => 'Expired';
+
+  @override
+  String get letterNotFound => 'This letter could not be found.';
+
+  @override
+  String get letterNewTitle => 'New support letter';
+
+  @override
+  String get letterNewIntro =>
+      'Say who it is for and paste what it should say. You will see the letter before it is issued.';
+
+  @override
+  String get letterNameLabel => 'Who is it for?';
+
+  @override
+  String get letterNameHint => 'Their full name';
+
+  @override
+  String letterNameMember(Object number) {
+    return 'Member $number';
+  }
+
+  @override
+  String get letterNameMatches => 'Members with this name';
+
+  @override
+  String get letterBodyLabel => 'What the letter says';
+
+  @override
+  String get letterBodyHint => 'Paste or type the letter here';
+
+  @override
+  String get letterUseEarlier => 'Use an earlier letter';
+
+  @override
+  String get letterUseEarlierTitle => 'Start from an earlier letter';
+
+  @override
+  String letterTooLong(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'This is $count lines too long for the page. Please shorten it and preview again.',
+      one:
+          'This is 1 line too long for the page. Please shorten it and preview again.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String letterValidUntil(Object date) {
+    return 'Valid until $date';
+  }
+
+  @override
+  String get letterValidUntilHelp => 'One year from today';
+
+  @override
+  String get letterValidUntilChange => 'Change';
+
+  @override
+  String get letterValidUntilTitle => 'Valid until';
+
+  @override
+  String letterValidUntilApply(Object date) {
+    return 'Use $date';
+  }
+
+  @override
+  String letterIssuedOn(Object date) {
+    return 'Issued $date';
+  }
+
+  @override
+  String get letterPreviewCta => 'Preview letter';
+
+  @override
+  String get letterPreviewTitle => 'Check the letter';
+
+  @override
+  String get letterPreviewIntro =>
+      'This is how it will print. Nothing is issued yet.';
+
+  @override
+  String get letterPreviewBack => 'Back to edit';
+
+  @override
+  String get letterIssueCta => 'Issue letter';
+
+  @override
+  String get letterPositionHelp => 'Where the text sits on the page';
+
+  @override
+  String get letterMoveUp => 'Move up';
+
+  @override
+  String get letterMoveDown => 'Move down';
+
+  @override
+  String get letterMoveMiddle => 'Put it in the middle';
+
+  @override
+  String get letterPreviewNumberHelp => 'The temple’s next number';
+
+  @override
+  String get letterPreviewNumberTyped => 'Typed by hand';
+
+  @override
+  String get letterChangeNumber => 'Change number';
+
+  @override
+  String get letterNumberEditTitle => 'Change number';
+
+  @override
+  String get letterNumberEditHelp =>
+      'Type the number to print on this letter. Numbers only.';
+
+  @override
+  String get letterNumberEditLabel => 'Letter number';
+
+  @override
+  String get letterNumberEditApply => 'Use this number';
+
+  @override
+  String get letterNumberUseNext => 'Use the next number';
+
+  @override
+  String letterNumberTakenTitle(Object number) {
+    return 'No. $number is already used';
+  }
+
+  @override
+  String letterNumberTakenBody(Object number, Object name) {
+    return 'No. $number is on the letter for $name. Please choose another number for this one.';
+  }
+
+  @override
+  String get letterNumberChoose => 'Choose another';
+
+  @override
+  String get letterReadyTitle => 'Letter issued';
+
+  @override
+  String letterReadyBody(Object name, Object number, Object date) {
+    return '$name · No. $number · valid until $date';
+  }
+
+  @override
+  String get letterPrint => 'Print letter';
+
+  @override
+  String get letterShare => 'Share';
+
+  @override
+  String get letterAnother => 'Write another';
+
+  @override
+  String get letterAnotherLike => 'Write another like this';
+
+  @override
+  String letterDocumentName(Object number) {
+    return 'Support letter $number';
+  }
+
+  @override
+  String get letterPageLabel => 'The letter as it prints';
+
+  @override
+  String get letterEnlargeHint => 'Tap the letter to enlarge it';
+
+  @override
+  String get toastNothingToPaste =>
+      'Nothing to paste. Please copy the letter’s wording first.';
 
   @override
   String get improveWording => 'Improve wording';
@@ -1364,25 +1571,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get toastWordingImproved =>
       'Wording improved. Please read it before sending.';
-
-  @override
-  String get letterCheck =>
-      'Please read it through. You can change any word before it is sent.';
-
-  @override
-  String get letterApproveSend => 'Approve and send';
-
-  @override
-  String get letterPrint => 'Print on letterhead';
-
-  @override
-  String get toastLetterEmpty =>
-      'The letter is empty. Please write something first.';
-
-  @override
-  String toastLetterSent(Object name) {
-    return 'Letter sent to $name.';
-  }
 
   @override
   String get announceTitle => 'Make an announcement';
@@ -2020,11 +2208,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Poster image + email + WhatsApp message';
 
   @override
-  String msgLetterAttachment(Object type) {
-    return '$type (signed PDF)';
-  }
-
-  @override
   String get failureNetwork =>
       'No internet connection. Please check it and try again.';
 
@@ -2135,6 +2318,34 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get validationMemberNumberInvalid =>
       'Please type the ID number in numbers only.';
+
+  @override
+  String get validationLetterNameRequired =>
+      'Please say who the letter is for.';
+
+  @override
+  String get validationLetterNameTooLong =>
+      'That name is too long. Please shorten it.';
+
+  @override
+  String get validationLetterBodyRequired =>
+      'Please paste or type what the letter says.';
+
+  @override
+  String get validationLetterBodyTooLong =>
+      'This is too long for the page. Please shorten it.';
+
+  @override
+  String get validationLetterBodyUnsupported =>
+      'Some characters cannot be printed on the letter. Please use English letters and plain punctuation.';
+
+  @override
+  String get validationLetterDatePast =>
+      'That day has passed. Please pick today or a later day.';
+
+  @override
+  String get validationLetterNumberInvalid =>
+      'Please type the letter number in numbers only.';
 
   @override
   String get validationDonorRequired => 'Please type the donor’s name.';

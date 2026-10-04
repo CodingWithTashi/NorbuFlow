@@ -15,6 +15,7 @@ interface Row {
   description: string;
   time_zone: string;
   card_template: string;
+  letter_template: string | null;
   membership_term: 'fixed_year_end' | 'rolling';
   membership_year_end_month: number | null;
   membership_year_end_day: number | null;
@@ -23,7 +24,8 @@ interface Row {
   features: TempleFeature[];
 }
 
-const columns = `t.id, t.name, t.description, t.time_zone, t.card_template, t.membership_term,
+const columns = `t.id, t.name, t.description, t.time_zone, t.card_template, t.letter_template,
+                 t.membership_term,
                  t.membership_year_end_month, t.membership_year_end_day, t.membership_months,
                  t.logo_key,
                  array(select f.feature from temple_features f
@@ -128,6 +130,7 @@ function templeOf(row: Row): Temple {
     description: row.description,
     timeZone: row.time_zone,
     cardTemplate: row.card_template,
+    letterTemplate: row.letter_template,
     membershipTerm: termOf(row),
     logoKey: row.logo_key,
     features: row.features,

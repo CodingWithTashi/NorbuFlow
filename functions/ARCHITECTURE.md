@@ -54,8 +54,14 @@ flowchart LR
 | `members-preview` | callable, 1 GiB | admin, frontDesk | Draws the card. Saves nothing. |
 | `members-create` | callable, 1 GiB | admin, frontDesk | Adds a member, issues their card. |
 | `members-update` | callable, 1 GiB | admin, frontDesk | Changes a member, reissues the card if it shows the change. |
+| `letters-list` | callable | admin | The temple's support letters, newest first. |
+| `letters-get` | callable | admin | A letter, what it says and its PDF. |
+| `letters-preview` | callable, 1 GiB | admin | Draws the letter, or says how many lines too long it is. Saves nothing. |
+| `letters-create` | callable, 1 GiB | admin | Issues a letter under the next number, or one typed by hand. |
 
-`cards` has no functions: it is the renderer the others use.
+`cards` has no functions: it is the renderer the others use. `letters` draws
+its own page: a temple's letterhead with the number, the last day and the
+body set on it, kerned as the design is (`letter-renderer.ts`).
 
 ## 3. Layers inside a feature
 
@@ -262,9 +268,12 @@ erDiagram
   temples ||--o{ temple_features : "what its app shows, cascade delete"
   temples ||--o{ members : "has"
   members ||--o{ member_cards : "issued, cascade delete"
+  temples ||--o{ letters : "issued"
+  members |o--o{ letters : "for, if for a member"
   users }o..o{ temple_staff : "same email, no FK"
   users |o..o{ members : "created_by is the uid, no FK"
   users |o..o{ member_cards : "issued_by is the uid, no FK"
+  users |o..o{ letters : "issued_by is the uid, no FK"
 
   temples {
     text id PK "slug, lower case with hyphens"
@@ -280,6 +289,8 @@ erDiagram
     bigint member_number_next "next number to hand out"
     text member_number_prefix "e.g. JC-"
     smallint member_number_min_digits "zero padding"
+    text letter_template "its letterhead, null if it has none"
+    bigint letter_number_next "next letter number to hand out"
     timestamptz created_at
   }
 
@@ -334,6 +345,21 @@ erDiagram
     timestamptz issued_at
   }
 
+  letters {
+    uuid id PK "chosen by the app, the idempotency key"
+    text temple_id FK "composite with member_id"
+    bigint number UK "unique per temple"
+    text name "who it is for, not printed"
+    uuid member_id FK "nullable"
+    date valid_until
+    date issued_on "in the temple's time zone"
+    jsonb body "lines of runs, as issued"
+    text template
+    text pdf_key
+    text issued_by "Firebase uid"
+    timestamptz issued_at
+  }
+
   schema_migrations {
     text name PK "migration file name"
     timestamptz applied_at
@@ -356,6 +382,10 @@ erDiagram
 | `members` | index `members_by_expiry (temple_id, expires_on)` | Who is due. |
 | `member_cards` | foreign key `(temple_id, member_id)` to `members (temple_id, id)` | A card can only point at a member of its own temple. |
 | `member_cards` | index `member_cards_by_member (temple_id, member_id, issued_at desc)` | The card a member holds is their newest. |
+| `temples` | check `letter_number_next > 0` | A letter number is above zero. |
+| `letters` | unique `(temple_id, number)` | A number is on one letter of a temple. |
+| `letters` | foreign key `(temple_id, member_id)` to `members (temple_id, id)` | A letter can only point at a member of its own temple. |
+| `letters` | index `letters_by_issue (temple_id, issued_at desc)` | The list is newest first. |
 
 ### What the schema means
 
@@ -371,7 +401,12 @@ erDiagram
   `temple_staff`, matched on email.
 - **A row in `temple_features` means on.** No row, not shown. Home and More
   are always shown, so they have no names.
-- Only `auth`, `temples` and `members` have tables so far. Offerings,
+- **A letter is never changed.** `letters` holds each one as it was issued:
+  its number (unique in the temple, counted by `temples.letter_number_next`),
+  who it is for, its last day, what it says (`body`, as JSON) and where its
+  PDF is. `temples.letter_template` names the letterhead; null, the temple
+  issues none.
+- Only `auth`, `temples`, `members` and `letters` have tables so far. Offerings,
   volunteers, announcements and the rest are still fakes in the app.
 
 ## 9. Files in R2
@@ -381,7 +416,8 @@ temples/<temple id>/
   logo-<uuid>.png                         a new key each time it is replaced
   members/<member id>/cards/<card id>.jpg the photo on that card
   members/<member id>/cards/<card id>.pdf the card as printed, front then back
+  letters/<letter id>.pdf                 the letter as printed, one page
 ```
 
 The database stores only these keys (`temples.logo_key`, `members.photo_key`,
-`member_cards.photo_key`, `member_cards.pdf_key`).
+`member_cards.photo_key`, `member_cards.pdf_key`, `letters.pdf_key`).

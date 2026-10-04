@@ -271,7 +271,7 @@ void main() {
                 homeActions: {
                   HomeAction.letter,
                   HomeAction.addMember,
-                  HomeAction.tax,
+                  HomeAction.hours,
                 },
               ),
             ),
@@ -285,7 +285,7 @@ void main() {
 
       final preview = container.read(rolePreviewProvider.notifier);
       preview.preview(Role.coordinator);
-      expect(container.read(homeActionsProvider), [HomeAction.letter]);
+      expect(container.read(homeActionsProvider), [HomeAction.hours]);
       preview.preview(Role.geshe);
       expect(container.read(homeActionsProvider), isEmpty);
     });

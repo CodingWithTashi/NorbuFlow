@@ -54,14 +54,12 @@ enum Role {
     HomeAction.donate,
     HomeAction.receipt,
     HomeAction.checkIn,
-    HomeAction.letter,
     HomeAction.volunteers,
   ]),
   coordinator([
     HomeAction.volunteers,
     HomeAction.assign,
     HomeAction.plan,
-    HomeAction.letter,
     HomeAction.hours,
     HomeAction.announce,
   ]),
@@ -84,4 +82,7 @@ enum Role {
   final List<HomeAction> homeActions;
 
   bool get canManageTemple => this == Role.admin;
+
+  /// A support letter carries the temple's signature: whoever has its card.
+  bool get canIssueLetters => homeActions.contains(HomeAction.letter);
 }

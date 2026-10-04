@@ -11,7 +11,7 @@ abstract final class AppRoutes {
   static const temples = '/temples';
 
   static const home = '/home';
-  static const letter = '/home/letter';
+  static const letters = '/home/letters';
   static const announce = '/home/announce';
   static const hours = '/home/hours';
   static const reports = '/home/reports';
@@ -35,8 +35,16 @@ abstract final class AppRoutes {
   static const team = '/more/team';
   static const templeSettings = '/more/settings';
 
-  static String letterFor(String volunteerId) =>
-      '$letter?volunteer=$volunteerId';
+  /// A new support letter: for [name], or worded like the letter [like].
+  static String newLetter({String? name, String? like}) {
+    final start = {'name': ?name, 'like': ?like};
+    return Uri(
+      path: '$letters/new',
+      queryParameters: start.isEmpty ? null : start,
+    ).toString();
+  }
+
+  static String letterOnFile(String letterId) => '$letters/$letterId';
 
   static String member(String memberId) => '$members/$memberId';
 

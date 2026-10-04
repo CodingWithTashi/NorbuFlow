@@ -16,7 +16,10 @@ import 'package:norbu_flow/features/temple/presentation/view_models/temple_sessi
 /// glyph widths rather than the test font's full-width boxes.
 Future<void> loadAppFonts() async {
   const families = {
-    'AtkinsonHyperlegibleNext': ['AtkinsonHyperlegibleNext.ttf'],
+    'AtkinsonHyperlegibleNext': [
+      'AtkinsonHyperlegibleNext.ttf',
+      'AtkinsonHyperlegibleNext-Italic.ttf',
+    ],
     'SourceSerif4': ['SourceSerif4.ttf', 'SourceSerif4-Italic.ttf'],
     'NotoSerifTibetan': ['NotoSerifTibetan.ttf'],
   };

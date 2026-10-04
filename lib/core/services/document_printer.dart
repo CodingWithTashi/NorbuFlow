@@ -15,17 +15,28 @@ abstract interface class DocumentPrinter {
   /// Prints [pdf] at the size of its own pages, whatever paper is chosen.
   Future<void> print(Uint8List pdf, {required String name});
 
+  /// Prints a full-page [pdf] as it is, fitted to the paper that is chosen.
+  Future<void> printPage(Uint8List pdf, {required String name});
+
   /// Opens the share sheet for [pdf], unchanged: save it, send it on.
   Future<void> share(Uint8List pdf, {required String fileName});
 
   /// Each page of [pdf] as a PNG, to show the document itself on screen.
   Future<List<Uint8List>> pages(Uint8List pdf);
+
+  /// The same for a full-page [pdf], which is far larger than a card.
+  Future<List<Uint8List>> fullPages(Uint8List pdf);
 }
 
 extension DocumentPhotos on DocumentPrinter {
   /// The pages of [pdf] as pictures, so a screen shows the document itself.
   Future<List<MemoryPhoto>> photos(Uint8List pdf) async => [
     for (final page in await pages(pdf)) MemoryPhoto(page),
+  ];
+
+  /// The pages of a full-page [pdf] as pictures.
+  Future<List<MemoryPhoto>> pagePhotos(Uint8List pdf) async => [
+    for (final page in await fullPages(pdf)) MemoryPhoto(page),
   ];
 }
 
@@ -37,6 +48,9 @@ final class DeviceDocumentPrinter implements DocumentPrinter {
 
   /// Sharp on a phone screen held close.
   static const _screenDotsPerInch = 300.0;
+
+  /// Sharp when a letter is enlarged to read it: an A4 page of 1654 by 2339.
+  static const _pageDotsPerInch = 200.0;
 
   @override
   Future<void> print(Uint8List pdf, {required String name}) => _run(() async {
@@ -55,14 +69,27 @@ final class DeviceDocumentPrinter implements DocumentPrinter {
     );
   });
 
+  // Drawn at a card's 600 dots per inch a letter is 35 million pixels, so
+  // it goes to the printer as the PDF it is.
+  @override
+  Future<void> printPage(Uint8List pdf, {required String name}) =>
+      _run(() => Printing.layoutPdf(name: name, onLayout: (_) => pdf));
+
   @override
   Future<void> share(Uint8List pdf, {required String fileName}) =>
       _run(() => Printing.sharePdf(bytes: pdf, filename: fileName));
 
   @override
-  Future<List<Uint8List>> pages(Uint8List pdf) => _run(
+  Future<List<Uint8List>> pages(Uint8List pdf) =>
+      _drawn(pdf, _screenDotsPerInch);
+
+  @override
+  Future<List<Uint8List>> fullPages(Uint8List pdf) =>
+      _drawn(pdf, _pageDotsPerInch);
+
+  Future<List<Uint8List>> _drawn(Uint8List pdf, double dotsPerInch) => _run(
     () async => [
-      await for (final page in Printing.raster(pdf, dpi: _screenDotsPerInch))
+      await for (final page in Printing.raster(pdf, dpi: dotsPerInch))
         await page.toPng(),
     ],
   );

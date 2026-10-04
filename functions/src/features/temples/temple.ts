@@ -44,7 +44,7 @@ export const templeFeatures = [
 export type TempleFeature = (typeof templeFeatures)[number];
 
 /** What a temple starts with: the parts that are ready. */
-export const defaultFeatures: TempleFeature[] = ['tab.members', 'home.addMember', 'home.letter'];
+export const defaultFeatures: TempleFeature[] = ['tab.members', 'home.addMember'];
 
 /** How long a membership runs. */
 export type MembershipTerm =
@@ -63,6 +63,8 @@ export interface Temple {
   timeZone: string;
   /** Which card artwork and layout this temple prints. */
   cardTemplate: string;
+  /** Which letterhead its support letters are set on. Null, it issues none. */
+  letterTemplate: string | null;
   membershipTerm: MembershipTerm;
   /** Where its logo is in the file store, once it has one. */
   logoKey: string | null;
@@ -71,7 +73,7 @@ export interface Temple {
 }
 
 /** A temple being registered. */
-export interface NewTemple extends Omit<Temple, 'logoKey'> {
+export interface NewTemple extends Omit<Temple, 'logoKey' | 'letterTemplate'> {
   /** Membership numbers: the first to hand out, and how they are written. */
   memberNumber: { next: string; prefix: string; minDigits: number };
 }

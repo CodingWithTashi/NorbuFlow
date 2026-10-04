@@ -12,11 +12,12 @@ import '../../../../core/widgets/async_value_view.dart';
 import '../../../../core/widgets/buttons.dart';
 import '../../../../core/widgets/decor.dart';
 import '../../../../core/widgets/tiles.dart';
+import '../../../temple/presentation/view_models/temple_session.dart';
 import '../view_models/calendar_view_model.dart';
-import '../view_models/letter_view_model.dart';
+import '../view_models/hours_view_model.dart';
 
-/// Hours given by each volunteer this year. Tapping someone starts a letter
-/// for them.
+/// Hours given by each volunteer this year. For whoever may issue support
+/// letters, tapping someone starts one for them.
 class HoursScreen extends ConsumerWidget {
   const HoursScreen({super.key});
 
@@ -28,16 +29,17 @@ class HoursScreen extends ConsumerWidget {
     final today = ref.watch(todayProvider);
     final summary = ref.watch(hoursSummaryProvider);
     final top = summary.value?.ranked.firstOrNull;
+    final writesLetters = ref.watch(myRoleProvider).canIssueLetters;
 
     return AppPage(
       backLabel: l10n.navHome,
       onBack: () => context.popOrGo(AppRoutes.home),
-      bottom: PrimaryButton(
-        label: l10n.hoursWriteThanks,
-        onPressed: () => context.go(
-          top == null ? AppRoutes.letter : AppRoutes.letterFor(top.id),
-        ),
-      ),
+      bottom: writesLetters
+          ? PrimaryButton(
+              label: l10n.hoursWriteThanks,
+              onPressed: () => context.go(AppRoutes.newLetter(name: top?.name)),
+            )
+          : null,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -83,8 +85,11 @@ class HoursScreen extends ConsumerWidget {
                       ListRow(
                         title: volunteer.name,
                         minHeight: 76,
-                        onTap: () =>
-                            context.go(AppRoutes.letterFor(volunteer.id)),
+                        onTap: writesLetters
+                            ? () => context.go(
+                                AppRoutes.newLetter(name: volunteer.name),
+                              )
+                            : null,
                         trailing: Text(
                           l10n.hoursValue(volunteer.hoursThisYear),
                           style: type.sans(17, weight: FontWeight.w700),

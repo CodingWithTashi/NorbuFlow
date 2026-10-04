@@ -4,7 +4,6 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_icon.dart';
 import '../../../core/widgets/decor.dart';
 import '../../../l10n/generated/app_localizations.dart';
-import '../domain/letter_composer.dart';
 import '../domain/volunteer.dart';
 
 extension DutyPresentation on Duty {
@@ -43,20 +42,6 @@ extension AvailabilityPresentation on Availability {
     Availability.available => PillTone.success,
     Availability.busy => PillTone.warning,
     Availability.away => PillTone.neutral,
-  };
-}
-
-extension LetterTypeLabels on LetterType {
-  String label(AppLocalizations l10n) => switch (this) {
-    LetterType.thanks => l10n.letterTypeThanks,
-    LetterType.reference => l10n.letterTypeReference,
-    LetterType.certificate => l10n.letterTypeCertificate,
-  };
-
-  String description(AppLocalizations l10n) => switch (this) {
-    LetterType.thanks => l10n.letterTypeThanksDesc,
-    LetterType.reference => l10n.letterTypeReferenceDesc,
-    LetterType.certificate => l10n.letterTypeCertificateDesc,
   };
 }
 

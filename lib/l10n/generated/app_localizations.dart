@@ -266,6 +266,42 @@ abstract class AppLocalizations {
   /// **'—'**
   String get commonEmDash;
 
+  /// No description provided for @formatBold.
+  ///
+  /// In en, this message translates to:
+  /// **'Bold'**
+  String get formatBold;
+
+  /// No description provided for @formatItalic.
+  ///
+  /// In en, this message translates to:
+  /// **'Italic'**
+  String get formatItalic;
+
+  /// No description provided for @formatUnderline.
+  ///
+  /// In en, this message translates to:
+  /// **'Underline'**
+  String get formatUnderline;
+
+  /// No description provided for @formatList.
+  ///
+  /// In en, this message translates to:
+  /// **'List'**
+  String get formatList;
+
+  /// No description provided for @formatPaste.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste'**
+  String get formatPaste;
+
+  /// No description provided for @formatDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get formatDone;
+
   /// No description provided for @onboardingSkip.
   ///
   /// In en, this message translates to:
@@ -641,7 +677,7 @@ abstract class AppLocalizations {
   /// No description provided for @actionLetter.
   ///
   /// In en, this message translates to:
-  /// **'Volunteer Letter'**
+  /// **'Support letter'**
   String get actionLetter;
 
   /// No description provided for @actionHours.
@@ -761,7 +797,7 @@ abstract class AppLocalizations {
   /// No description provided for @actionLetterSub.
   ///
   /// In en, this message translates to:
-  /// **'Thanks, certificate'**
+  /// **'Write and print'**
   String get actionLetterSub;
 
   /// No description provided for @actionHoursSub.
@@ -2431,71 +2467,359 @@ abstract class AppLocalizations {
   /// **'More'**
   String get navMore;
 
-  /// No description provided for @letterTitle.
+  /// No description provided for @lettersTitle.
   ///
   /// In en, this message translates to:
-  /// **'Volunteer letter'**
-  String get letterTitle;
+  /// **'Support letters'**
+  String get lettersTitle;
 
-  /// No description provided for @letterIntro.
+  /// No description provided for @lettersCount.
   ///
   /// In en, this message translates to:
-  /// **'Pick a volunteer and a letter type. A draft is written for you to check and edit.'**
-  String get letterIntro;
+  /// **'{count, plural, =1{1 letter} other{{count} letters}}'**
+  String lettersCount(int count);
 
-  /// No description provided for @letterStepVolunteer.
+  /// No description provided for @lettersFoundCount.
   ///
   /// In en, this message translates to:
-  /// **'1 · Volunteer'**
-  String get letterStepVolunteer;
+  /// **'{count} found'**
+  String lettersFoundCount(Object count);
 
-  /// No description provided for @letterStepType.
+  /// No description provided for @lettersSearchHint.
   ///
   /// In en, this message translates to:
-  /// **'2 · Type of letter'**
-  String get letterStepType;
+  /// **'Search by name or number'**
+  String get lettersSearchHint;
 
-  /// No description provided for @letterStepDraft.
+  /// No description provided for @lettersEmpty.
   ///
   /// In en, this message translates to:
-  /// **'3 · Draft'**
-  String get letterStepDraft;
+  /// **'No letters yet. The first one you issue will show here.'**
+  String get lettersEmpty;
 
-  /// No description provided for @letterTypeThanks.
+  /// No description provided for @lettersNoResults.
   ///
   /// In en, this message translates to:
-  /// **'Thank-you letter'**
-  String get letterTypeThanks;
+  /// **'No letter matches “{query}”.'**
+  String lettersNoResults(Object query);
 
-  /// No description provided for @letterTypeThanksDesc.
+  /// No description provided for @lettersNewCta.
   ///
   /// In en, this message translates to:
-  /// **'A warm thank-you for their service'**
-  String get letterTypeThanksDesc;
+  /// **'New letter'**
+  String get lettersNewCta;
 
-  /// No description provided for @letterTypeReference.
+  /// No description provided for @lettersSelectHint.
   ///
   /// In en, this message translates to:
-  /// **'Reference letter'**
-  String get letterTypeReference;
+  /// **'Choose a letter to see it here.'**
+  String get lettersSelectHint;
 
-  /// No description provided for @letterTypeReferenceDesc.
+  /// No description provided for @letterNumber.
   ///
   /// In en, this message translates to:
-  /// **'For a job, school or visa application'**
-  String get letterTypeReferenceDesc;
+  /// **'No. {number}'**
+  String letterNumber(Object number);
 
-  /// No description provided for @letterTypeCertificate.
+  /// No description provided for @letterRowSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Certificate of service'**
-  String get letterTypeCertificate;
+  /// **'No. {number} · Valid until {date}'**
+  String letterRowSubtitle(Object number, Object date);
 
-  /// No description provided for @letterTypeCertificateDesc.
+  /// No description provided for @letterExpired.
   ///
   /// In en, this message translates to:
-  /// **'Hours served this year, signed by the temple'**
-  String get letterTypeCertificateDesc;
+  /// **'Expired'**
+  String get letterExpired;
+
+  /// No description provided for @letterNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'This letter could not be found.'**
+  String get letterNotFound;
+
+  /// No description provided for @letterNewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New support letter'**
+  String get letterNewTitle;
+
+  /// No description provided for @letterNewIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Say who it is for and paste what it should say. You will see the letter before it is issued.'**
+  String get letterNewIntro;
+
+  /// No description provided for @letterNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Who is it for?'**
+  String get letterNameLabel;
+
+  /// No description provided for @letterNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Their full name'**
+  String get letterNameHint;
+
+  /// No description provided for @letterNameMember.
+  ///
+  /// In en, this message translates to:
+  /// **'Member {number}'**
+  String letterNameMember(Object number);
+
+  /// No description provided for @letterNameMatches.
+  ///
+  /// In en, this message translates to:
+  /// **'Members with this name'**
+  String get letterNameMatches;
+
+  /// No description provided for @letterBodyLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'What the letter says'**
+  String get letterBodyLabel;
+
+  /// No description provided for @letterBodyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste or type the letter here'**
+  String get letterBodyHint;
+
+  /// No description provided for @letterUseEarlier.
+  ///
+  /// In en, this message translates to:
+  /// **'Use an earlier letter'**
+  String get letterUseEarlier;
+
+  /// No description provided for @letterUseEarlierTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Start from an earlier letter'**
+  String get letterUseEarlierTitle;
+
+  /// No description provided for @letterTooLong.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{This is 1 line too long for the page. Please shorten it and preview again.} other{This is {count} lines too long for the page. Please shorten it and preview again.}}'**
+  String letterTooLong(int count);
+
+  /// No description provided for @letterValidUntil.
+  ///
+  /// In en, this message translates to:
+  /// **'Valid until {date}'**
+  String letterValidUntil(Object date);
+
+  /// No description provided for @letterValidUntilHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'One year from today'**
+  String get letterValidUntilHelp;
+
+  /// No description provided for @letterValidUntilChange.
+  ///
+  /// In en, this message translates to:
+  /// **'Change'**
+  String get letterValidUntilChange;
+
+  /// No description provided for @letterValidUntilTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Valid until'**
+  String get letterValidUntilTitle;
+
+  /// No description provided for @letterValidUntilApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Use {date}'**
+  String letterValidUntilApply(Object date);
+
+  /// No description provided for @letterIssuedOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Issued {date}'**
+  String letterIssuedOn(Object date);
+
+  /// No description provided for @letterPreviewCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview letter'**
+  String get letterPreviewCta;
+
+  /// No description provided for @letterPreviewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the letter'**
+  String get letterPreviewTitle;
+
+  /// No description provided for @letterPreviewIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'This is how it will print. Nothing is issued yet.'**
+  String get letterPreviewIntro;
+
+  /// No description provided for @letterPreviewBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to edit'**
+  String get letterPreviewBack;
+
+  /// No description provided for @letterIssueCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Issue letter'**
+  String get letterIssueCta;
+
+  /// No description provided for @letterPositionHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Where the text sits on the page'**
+  String get letterPositionHelp;
+
+  /// No description provided for @letterMoveUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Move up'**
+  String get letterMoveUp;
+
+  /// No description provided for @letterMoveDown.
+  ///
+  /// In en, this message translates to:
+  /// **'Move down'**
+  String get letterMoveDown;
+
+  /// No description provided for @letterMoveMiddle.
+  ///
+  /// In en, this message translates to:
+  /// **'Put it in the middle'**
+  String get letterMoveMiddle;
+
+  /// No description provided for @letterPreviewNumberHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'The temple’s next number'**
+  String get letterPreviewNumberHelp;
+
+  /// No description provided for @letterPreviewNumberTyped.
+  ///
+  /// In en, this message translates to:
+  /// **'Typed by hand'**
+  String get letterPreviewNumberTyped;
+
+  /// No description provided for @letterChangeNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Change number'**
+  String get letterChangeNumber;
+
+  /// No description provided for @letterNumberEditTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Change number'**
+  String get letterNumberEditTitle;
+
+  /// No description provided for @letterNumberEditHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Type the number to print on this letter. Numbers only.'**
+  String get letterNumberEditHelp;
+
+  /// No description provided for @letterNumberEditLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Letter number'**
+  String get letterNumberEditLabel;
+
+  /// No description provided for @letterNumberEditApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Use this number'**
+  String get letterNumberEditApply;
+
+  /// No description provided for @letterNumberUseNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the next number'**
+  String get letterNumberUseNext;
+
+  /// No description provided for @letterNumberTakenTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No. {number} is already used'**
+  String letterNumberTakenTitle(Object number);
+
+  /// No description provided for @letterNumberTakenBody.
+  ///
+  /// In en, this message translates to:
+  /// **'No. {number} is on the letter for {name}. Please choose another number for this one.'**
+  String letterNumberTakenBody(Object number, Object name);
+
+  /// No description provided for @letterNumberChoose.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose another'**
+  String get letterNumberChoose;
+
+  /// No description provided for @letterReadyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Letter issued'**
+  String get letterReadyTitle;
+
+  /// No description provided for @letterReadyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} · No. {number} · valid until {date}'**
+  String letterReadyBody(Object name, Object number, Object date);
+
+  /// No description provided for @letterPrint.
+  ///
+  /// In en, this message translates to:
+  /// **'Print letter'**
+  String get letterPrint;
+
+  /// No description provided for @letterShare.
+  ///
+  /// In en, this message translates to:
+  /// **'Share'**
+  String get letterShare;
+
+  /// No description provided for @letterAnother.
+  ///
+  /// In en, this message translates to:
+  /// **'Write another'**
+  String get letterAnother;
+
+  /// No description provided for @letterAnotherLike.
+  ///
+  /// In en, this message translates to:
+  /// **'Write another like this'**
+  String get letterAnotherLike;
+
+  /// No description provided for @letterDocumentName.
+  ///
+  /// In en, this message translates to:
+  /// **'Support letter {number}'**
+  String letterDocumentName(Object number);
+
+  /// No description provided for @letterPageLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'The letter as it prints'**
+  String get letterPageLabel;
+
+  /// No description provided for @letterEnlargeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the letter to enlarge it'**
+  String get letterEnlargeHint;
+
+  /// No description provided for @toastNothingToPaste.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to paste. Please copy the letter’s wording first.'**
+  String get toastNothingToPaste;
 
   /// No description provided for @improveWording.
   ///
@@ -2514,36 +2838,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Wording improved. Please read it before sending.'**
   String get toastWordingImproved;
-
-  /// No description provided for @letterCheck.
-  ///
-  /// In en, this message translates to:
-  /// **'Please read it through. You can change any word before it is sent.'**
-  String get letterCheck;
-
-  /// No description provided for @letterApproveSend.
-  ///
-  /// In en, this message translates to:
-  /// **'Approve and send'**
-  String get letterApproveSend;
-
-  /// No description provided for @letterPrint.
-  ///
-  /// In en, this message translates to:
-  /// **'Print on letterhead'**
-  String get letterPrint;
-
-  /// No description provided for @toastLetterEmpty.
-  ///
-  /// In en, this message translates to:
-  /// **'The letter is empty. Please write something first.'**
-  String get toastLetterEmpty;
-
-  /// No description provided for @toastLetterSent.
-  ///
-  /// In en, this message translates to:
-  /// **'Letter sent to {name}.'**
-  String toastLetterSent(Object name);
 
   /// No description provided for @announceTitle.
   ///
@@ -3575,12 +3869,6 @@ abstract class AppLocalizations {
   /// **'Poster image + email + WhatsApp message'**
   String get msgAnnouncementAttachment;
 
-  /// No description provided for @msgLetterAttachment.
-  ///
-  /// In en, this message translates to:
-  /// **'{type} (signed PDF)'**
-  String msgLetterAttachment(Object type);
-
   /// No description provided for @failureNetwork.
   ///
   /// In en, this message translates to:
@@ -3766,6 +4054,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Please type the ID number in numbers only.'**
   String get validationMemberNumberInvalid;
+
+  /// No description provided for @validationLetterNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please say who the letter is for.'**
+  String get validationLetterNameRequired;
+
+  /// No description provided for @validationLetterNameTooLong.
+  ///
+  /// In en, this message translates to:
+  /// **'That name is too long. Please shorten it.'**
+  String get validationLetterNameTooLong;
+
+  /// No description provided for @validationLetterBodyRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please paste or type what the letter says.'**
+  String get validationLetterBodyRequired;
+
+  /// No description provided for @validationLetterBodyTooLong.
+  ///
+  /// In en, this message translates to:
+  /// **'This is too long for the page. Please shorten it.'**
+  String get validationLetterBodyTooLong;
+
+  /// No description provided for @validationLetterBodyUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Some characters cannot be printed on the letter. Please use English letters and plain punctuation.'**
+  String get validationLetterBodyUnsupported;
+
+  /// No description provided for @validationLetterDatePast.
+  ///
+  /// In en, this message translates to:
+  /// **'That day has passed. Please pick today or a later day.'**
+  String get validationLetterDatePast;
+
+  /// No description provided for @validationLetterNumberInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Please type the letter number in numbers only.'**
+  String get validationLetterNumberInvalid;
 
   /// No description provided for @validationDonorRequired.
   ///

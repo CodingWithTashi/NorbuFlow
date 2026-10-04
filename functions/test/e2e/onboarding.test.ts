@@ -48,7 +48,7 @@ describe('registering a temple', () => {
       cardTemplate: 'standard',
       membership: { kind: 'rolling', months: 12 },
       hasLogo: false,
-      features: ['home.addMember', 'home.letter', 'tab.members'],
+      features: ['home.addMember', 'tab.members'],
     });
     expect(again.status).toBe(409);
     expect(again.body.error).toMatchObject({ kind: 'conflict', reason: 'templeExists' });

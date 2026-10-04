@@ -91,6 +91,8 @@ flutter:
     - family: AtkinsonHyperlegibleNext
       fonts:
         - asset: assets/fonts/AtkinsonHyperlegibleNext.ttf
+        - asset: assets/fonts/AtkinsonHyperlegibleNext-Italic.ttf
+          style: italic
     - family: SourceSerif4
       fonts:
         - asset: assets/fonts/SourceSerif4.ttf

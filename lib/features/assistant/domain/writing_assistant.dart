@@ -1,4 +1,4 @@
-enum WritingKind { volunteerLetter, announcement }
+enum WritingKind { announcement }
 
 /// "Improve wording": rewrites a draft to be warmer and clearer while keeping
 /// every fact. The real implementation will call a Cloud Function.

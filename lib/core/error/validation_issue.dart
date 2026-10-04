@@ -23,6 +23,23 @@ enum ValidationIssue {
 
   /// A membership number typed by hand that is not digits above zero.
   memberNumberInvalid,
+
+  /// Who a support letter is for.
+  letterNameRequired,
+  letterNameTooLong,
+  letterBodyRequired,
+
+  /// Does not fit on the temple's letterhead.
+  letterBodyTooLong,
+
+  /// Has letters the letterhead's typeface cannot print.
+  letterBodyUnsupported,
+
+  /// A last day that has already passed.
+  letterDatePast,
+
+  /// A letter number typed by hand that is not digits above zero.
+  letterNumberInvalid,
   donorRequired,
   purposeRequired,
   contactIncomplete,

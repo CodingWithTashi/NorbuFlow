@@ -89,7 +89,7 @@ extension HomeActionPresentation on HomeAction {
       HomeAction.calendar ||
       HomeAction.myShifts => AppRoutes.calendar,
       HomeAction.announce => AppRoutes.announce,
-      HomeAction.letter => AppRoutes.letter,
+      HomeAction.letter => AppRoutes.letters,
       HomeAction.hours => AppRoutes.hours,
       HomeAction.reports => AppRoutes.reports,
       HomeAction.tax => AppRoutes.tax,

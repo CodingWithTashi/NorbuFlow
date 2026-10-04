@@ -45,7 +45,7 @@ curl -X POST "$NORBU_API/temples-create" \
     "cardTemplate": "standard",
     "membership": { "kind": "rolling", "months": 12 },
     "hasLogo": false,
-    "features": ["home.addMember", "home.letter", "tab.members"]
+    "features": ["home.addMember", "tab.members"]
   }
 }
 ```
@@ -118,9 +118,9 @@ or with another `templeId` to give one person a second temple.
 
 ## 4. Choose what its app shows
 
-A new temple starts with the Members tab and two Home cards, Add a Member and
-Volunteer Letter. Home and More are always shown. To change that, send
-everything it should show; the list replaces the one before.
+A new temple starts with the Members tab and one Home card, Add a Member.
+Home and More are always shown. To change that, send everything it should
+show; the list replaces the one before.
 
 ```sh
 curl -X POST "$NORBU_API/temples-setFeatures" \
@@ -128,7 +128,7 @@ curl -X POST "$NORBU_API/temples-setFeatures" \
   -H "Content-Type: application/json" \
   -d '{
     "templeId": "drolma-ling-centre",
-    "features": ["tab.members", "tab.offerings", "home.addMember", "home.letter", "home.donate"]
+    "features": ["tab.members", "tab.offerings", "home.addMember", "home.donate"]
   }'
 ```
 
@@ -137,7 +137,7 @@ curl -X POST "$NORBU_API/temples-setFeatures" \
   "temple": {
     "id": "drolma-ling-centre",
     "...": "...",
-    "features": ["home.addMember", "home.donate", "home.letter", "tab.members", "tab.offerings"]
+    "features": ["home.addMember", "home.donate", "tab.members", "tab.offerings"]
   }
 }
 ```
@@ -164,7 +164,7 @@ tab's screen needs that tab on as well.
 | `home.volunteers`   | This Month's Volunteers | admin, frontDesk, coordinator             | Calendar  |
 | `home.announce`     | Make an Announcement    | admin, accountant, coordinator, volunteer | Home      |
 | `home.assign`       | Assign a Shift          | coordinator                               | Calendar  |
-| `home.letter`       | Volunteer Letter        | admin, frontDesk, coordinator             | Home      |
+| `home.letter`       | Support letter          | admin                                     | Home      |
 | `home.hours`        | Volunteer Hours         | coordinator, volunteer                    | Home      |
 | `home.reports`      | Reports                 | accountant                                | Home      |
 | `home.tax`          | Year-end Tax Receipts   | accountant                                | Home      |
@@ -178,6 +178,17 @@ tab's screen needs that tab on as well.
 | `home.myCard`       | My ID Card              | member                                    | Members   |
 
 A name it does not know is refused (`400`), listing the names there are.
+
+`home.letter` is for a temple that has a letterhead. A support letter is the
+temple's own artwork with a number, a last day and the letter's words set on
+it, so a temple gets one in three steps, not by a request:
+
+1. Its artwork goes in `assets/temples/<temple id>/support-letter/`, and a
+   template that says where the words go in
+   `src/features/letters/templates/`, listed in `letter-templates.ts`.
+2. A migration names that template in `temples.letter_template` and sets
+   `temples.letter_number_next` to the first number to hand out.
+3. `temples-setFeatures` switches `home.letter` on.
 
 ## When a request is refused
 

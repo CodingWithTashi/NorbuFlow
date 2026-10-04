@@ -103,6 +103,17 @@ abstract final class AppIcons {
   static const minus = AppIconData('M6 12h12');
   static const arrowUp = AppIconData('M12 19V5M6 11l6-6 6 6');
   static const arrowDown = AppIconData('M12 5v14M6 13l6 6 6-6');
+  static const bold = AppIconData(
+    'M7 4h6a4 4 0 0 1 0 8H7zM7 12h7a4 4 0 0 1 0 8H7z',
+  );
+  static const italic = AppIconData('M10 4h8M6 20h8M14 4l-4 16');
+  static const underline = AppIconData('M7 4v7a5 5 0 0 0 10 0V4M5 20h14');
+  static const bulletList = AppIconData(
+    'M9 6h11M9 12h11M9 18h11M4.5 6v.01M4.5 12v.01M4.5 18v.01',
+  );
+  static const paste = AppIconData(
+    'M8 5H6v16h12V5h-2M9 3h6v4H9zM9 12h6M9 16h4',
+  );
 
   // Practice-day marks. Drawn rather than typed as symbols (◆ ✦ ● ❖ ○)
   // because the app's fonts do not contain them, and what a device
